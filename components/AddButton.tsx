@@ -1,5 +1,7 @@
+import { router } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+
 
 export default function AddButton() {
 
@@ -15,7 +17,10 @@ export default function AddButton() {
             <Text style={styles.text}>Add Task</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.item}>
+          <TouchableOpacity
+            style={styles.item}
+            onPress={() => router.push("/add-habit")}
+          >
             <Text style={styles.text}>Add Habit</Text>
           </TouchableOpacity>
 
