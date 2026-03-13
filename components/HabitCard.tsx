@@ -1,57 +1,85 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+import { useHabitStore } from "@/store/habitStore";
+
 type HabitCardProps = {
-  icon: string;
-  name: string;
-  progress?: number;
-  goal?: number;
-  done?: boolean;
-  streak?: number;
-};
+  id: string
+  icon: string
+  name: string
+  progress?: number
+  goal?: number
+  unit?: string
+  streak?: number
+}
 
 export default function HabitCard({
+  id,
   icon,
   name,
   progress,
   goal,
-  done,
-  streak,
+  unit,
+  streak
 }: HabitCardProps) {
-  const percent = goal ? progress! / goal : 0;
+
+  const incrementHabitProgress =
+    useHabitStore((state) => state.incrementHabitProgress)
+
+  const percent =
+    goal ? (progress ?? 0) / goal : 0
 
   return (
-    <TouchableOpacity style={styles.card}>
-      
+
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => incrementHabitProgress(id)}
+    >
+
       <View style={styles.row}>
+
         <Text style={styles.icon}>{icon}</Text>
+
         <Text style={styles.name}>{name}</Text>
+
       </View>
 
+
       {goal && (
+
         <>
           <Text style={styles.progressText}>
-            {progress} / {goal}
+            {progress ?? 0} / {goal} {unit}
           </Text>
 
           <View style={styles.progressBar}>
+
             <View
-              style={[styles.progressFill, { width: `${percent * 100}%` }]}
+              style={[
+                styles.progressFill,
+                { width: `${percent * 100}%` }
+              ]}
             />
+
           </View>
         </>
+
       )}
 
-      {done && <Text style={styles.done}>✓ Completed</Text>}
 
-      {streak && (
-        <Text style={styles.streak}>🔥 {streak} day streak</Text>
-      )}
+      {streak ? (
+
+        <Text style={styles.streak}>
+          🔥 {streak} day streak
+        </Text>
+
+      ) : null}
 
     </TouchableOpacity>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
+
   card: {
     backgroundColor: "white",
     padding: 18,
@@ -93,15 +121,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
 
-  done: {
-    marginTop: 6,
-    color: "#4CAF50",
-    fontWeight: "600",
-  },
-
   streak: {
     marginTop: 6,
     color: "#FF6B00",
     fontWeight: "600",
   },
+
 });

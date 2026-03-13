@@ -3,7 +3,9 @@ import FocusCard from "@/components/FocusCard";
 import HabitCard from "@/components/HabitCard";
 import TaskCard from "@/components/TaskCard";
 import { useHabitStore } from "@/store/habitStore";
-import { useRef, useState } from "react";
+
+import { useEffect, useRef, useState } from "react";
+
 import {
   ScrollView,
   StyleSheet,
@@ -24,53 +26,6 @@ const dateString = today.toLocaleDateString("en-US", {
 
 
 // --------------------------------------------------
-// 🔹 FUNCIÓN QUE DECIDE SI UN HÁBITO SE MUESTRA HOY
-// --------------------------------------------------
-
-function shouldShowHabitToday(habit: any) {
-
-  const today = new Date();
-  const startDate = new Date(habit.startDate);
-
-  // Si el hábito empieza en el futuro no se muestra
-  if (today < startDate) return false;
-
-  const weekday = today
-    .toLocaleDateString("en-US", { weekday: "short" })
-    .toLowerCase();
-
-  // Si es diario
-  if (habit.repeatType === "daily") return true;
-
-  // Si es solo una vez
-  if (habit.repeatType === "once") {
-    return today.toDateString() === startDate.toDateString();
-  }
-
-  // Si es semanal
-  if (habit.repeatType === "weekly") {
-    return habit.repeatConfig?.includes(weekday);
-  }
-
-  // Por defecto mostrar
-  return true;
-}
-
-
-
-export default function TodayScreen() {
-
-  const pagerRef = useRef<PagerView>(null);
-
-  const [page, setPage] = useState(1);
-
-
-  const goToPage = (index: number) => {
-    pagerRef.current?.setPage(index);
-    setPage(index);
-  };
-
-// --------------------------------------------------
 // FUNCIÓN QUE DECIDE SI EL HÁBITO SE MUESTRA HOY
 // --------------------------------------------------
 
@@ -79,12 +34,7 @@ function shouldShowHabitToday(habit: any) {
   const today = new Date();
   const startDate = new Date(habit.startDate);
 
-  // Si empieza en el futuro no se muestra
   if (today < startDate) return false;
-
-  const weekday = today
-    .toLocaleDateString("en-US", { weekday: "short" })
-    .toLowerCase();
 
   if (habit.repeatType === "daily") return true;
 
@@ -93,27 +43,60 @@ function shouldShowHabitToday(habit: any) {
   }
 
   if (habit.repeatType === "weekly") {
-    return habit.repeatConfig?.includes(weekday);
+
+    const todayDay = today.getDay();
+
+    return habit.repeatConfig?.includes(todayDay);
   }
 
   return true;
 }
-  // --------------------------------------------------
-  // 🔹 FILTRAR SOLO LOS HÁBITOS QUE TOCAN HOY
-  // --------------------------------------------------
+
+
+export default function TodayScreen() {
+
+  const pagerRef = useRef<PagerView>(null);
+
+  const [page, setPage] = useState(1);
 
   const habits = useHabitStore((state) => state.habits);
 
+  const resetDailyProgress =
+    useHabitStore((state) => state.resetDailyProgress);
+
+
+  // --------------------------------------------------
+  // RESET AUTOMÁTICO DEL DÍA
+  // --------------------------------------------------
+
+  useEffect(() => {
+
+    resetDailyProgress();
+
+  }, []);
+
+
+  const goToPage = (index: number) => {
+
+    pagerRef.current?.setPage(index);
+
+    setPage(index);
+
+  };
 
 
   return (
+
     <View style={styles.container}>
 
       {/* HEADER */}
 
       <View style={styles.headerContainer}>
+
         <Text style={styles.header}>Today</Text>
+
         <Text style={styles.date}>{dateString}</Text>
+
       </View>
 
 
@@ -143,7 +126,7 @@ function shouldShowHabitToday(habit: any) {
 
 
 
-      {/* SLIDE PAGES */}
+      {/* PAGER */}
 
       <PagerView
         ref={pagerRef}
@@ -179,22 +162,22 @@ function shouldShowHabitToday(habit: any) {
 
           <View style={styles.section}>
 
+            {habits
+              .filter((habit) => shouldShowHabitToday(habit))
+              .map((habit) => (
 
+                <HabitCard
+                  key={habit.id}
+                  id={habit.id}
+                  icon={habit.icon}
+                  name={habit.name}
+                  goal={habit.goal}
+                  progress={habit.progress}
+                  unit={habit.unit}
+                  streak={habit.streak}
+                />
 
-
-            {/* 🔹 Mostrar solo los hábitos que corresponden hoy */}
-
-            {habits.map((habit, index) => (
-
-              <HabitCard
-                key={index}
-                icon={habit.icon}
-                name={habit.name}
-                done={habit.doneToday}
-                streak={habit.streak}
-              />
-
-            ))}
+              ))}
 
           </View>
 
@@ -221,15 +204,14 @@ function shouldShowHabitToday(habit: any) {
       </PagerView>
 
 
-
       {/* BOTÓN FLOTANTE */}
 
       <FloatingAddButton />
 
     </View>
+
   );
 }
-
 
 
 const styles = StyleSheet.create({

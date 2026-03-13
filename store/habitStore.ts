@@ -1,123 +1,86 @@
-// --------------------------------------------------
-// STORE GLOBAL DE HÁBITOS
-// Usamos Zustand para manejar el estado global
-// --------------------------------------------------
-
+import AsyncStorage from "@react-native-async-storage/async-storage"
 import { create } from "zustand"
-
-// --------------------------------------------------
-// TIPO HABIT
-// Define la estructura de cada hábito
-// --------------------------------------------------
+import { createJSONStorage, persist } from "zustand/middleware"
 
 export type Habit = {
 
-  // ID único del hábito
   id: string
-
-  // Nombre del hábito
   name: string
-
-  // Icono del hábito (viene del template)
   icon: string
 
-  // Tipo de repetición
   repeatType: "daily" | "weekly" | "once"
-
-  // Configuración para hábitos semanales
-  // Ejemplo: [1,3,5] = lunes, miércoles, viernes
   repeatConfig?: number[]
 
-  // Fecha en la que empieza el hábito
   startDate: string
 
-  // Lista de fechas en las que el hábito fue completado
-  // Formato: YYYY-MM-DD
   completedDates: string[]
 
-  // Streak actual
   streak: number
-}
 
-// --------------------------------------------------
-// TIPO DEL STORE
-// Define todas las funciones disponibles
-// --------------------------------------------------
+  goal?: number
+  progress?: number
+  unit?: string
+}
 
 type HabitStore = {
 
-  // Lista de hábitos creados
   habits: Habit[]
 
-  // Función para agregar un nuevo hábito
+  lastProgressReset: string
+
   addHabit: (habit: Habit) => void
 
-  // Función para marcar o desmarcar un hábito
-  toggleHabitCompletion: (habitId: string) => void
+  incrementHabitProgress: (habitId: string) => void
 
-  // Función para saber si el hábito está completado hoy
+  resetDailyProgress: () => void
+
   isHabitDoneToday: (habit: Habit) => boolean
 }
 
-// --------------------------------------------------
-// HELPER → OBTENER FECHA DE HOY
+
 // --------------------------------------------------
 
 const getToday = () => {
 
-  const today = new Date()
-
-  // Convertimos a formato YYYY-MM-DD
-  return today.toISOString().split("T")[0]
+  return new Date().toISOString().split("T")[0]
 
 }
 
-// --------------------------------------------------
-// FUNCIÓN PARA CALCULAR EL STREAK
+
 // --------------------------------------------------
 
 const calculateStreak = (completedDates: string[]) => {
 
-  // Copiamos y ordenamos las fechas
   const sorted = [...completedDates].sort().reverse()
 
-  // Streak inicial
   let streak = 0
 
-  // Fecha actual
   let current = new Date()
 
-  // Recorremos las fechas completadas
   for (let i = 0; i < sorted.length; i++) {
 
     const date = new Date(sorted[i])
 
-    // Calculamos diferencia en días
     const diff =
       Math.floor(
-        (current.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+        (current.getTime() - date.getTime()) /
+        (1000 * 60 * 60 * 24)
       )
 
-    // Si es el mismo día
     if (diff === 0) {
 
       streak++
-
-      // retrocedemos un día
       current.setDate(current.getDate() - 1)
 
     }
 
-    // Si fue ayer
     else if (diff === 1) {
 
       streak++
-
       current.setDate(current.getDate() - 1)
 
     }
 
-    // Si hay un salto de días → rompemos streak
     else {
 
       break
@@ -127,92 +90,134 @@ const calculateStreak = (completedDates: string[]) => {
   }
 
   return streak
-
 }
 
+
 // --------------------------------------------------
-// CREAR STORE DE ZUSTAND
-// --------------------------------------------------
 
-export const useHabitStore = create<HabitStore>((set, get) => ({
+export const useHabitStore = create<HabitStore>()(
 
-  // Estado inicial del store
-  habits: [],
+  persist(
 
-  // --------------------------------------------------
-  // AGREGAR HÁBITO
-  // --------------------------------------------------
+    (set, get) => ({
 
-  addHabit: (habit) =>
-    set((state) => ({
-      habits: [...state.habits, habit],
-    })),
+      habits: [],
 
-  // --------------------------------------------------
-  // SABER SI UN HÁBITO ESTÁ COMPLETADO HOY
-  // --------------------------------------------------
+      lastProgressReset: getToday(),
 
-  isHabitDoneToday: (habit) => {
 
-    const today = getToday()
+      // --------------------------------------------------
+      // CREAR HÁBITO
+      // --------------------------------------------------
 
-    // Revisamos si la fecha de hoy está en completedDates
-    return habit.completedDates.includes(today)
+      addHabit: (habit) =>
+        set((state) => ({
+          habits: [...state.habits, habit],
+        })),
 
-  },
 
-  // --------------------------------------------------
-  // MARCAR / DESMARCAR HÁBITO
-  // --------------------------------------------------
 
-  toggleHabitCompletion: (habitId) =>
-    set((state) => {
+      // --------------------------------------------------
+      // PROGRESO DEL HÁBITO
+      // --------------------------------------------------
 
-      const today = getToday()
+      incrementHabitProgress: (habitId) =>
+        set((state) => {
 
-      const habits = state.habits.map((habit) => {
+          const today = getToday()
 
-        // Si no es el hábito tocado lo dejamos igual
-        if (habit.id !== habitId) return habit
+          const habits = state.habits.map((habit) => {
 
-        // Copiamos las fechas completadas
-        let updatedDates = [...habit.completedDates]
+            if (habit.id !== habitId) return habit
 
-        // Revisamos si ya estaba completado hoy
-        const alreadyDone = updatedDates.includes(today)
+            let progress = habit.progress ?? 0
+            const goal = habit.goal ?? 1
 
-        // Si ya estaba completado → lo quitamos
-        if (alreadyDone) {
+            progress++
 
-          updatedDates = updatedDates.filter((d) => d !== today)
+            let completedDates = [...habit.completedDates]
 
-        }
+            if (progress >= goal) {
 
-        // Si no estaba completado → lo agregamos
-        else {
+              if (!completedDates.includes(today)) {
 
-          updatedDates.push(today)
+                completedDates.push(today)
 
-        }
+              }
 
-        // Recalculamos el streak
-        const newStreak = calculateStreak(updatedDates)
+            }
 
-        // Devolvemos el hábito actualizado
-        return {
+            const newStreak = calculateStreak(completedDates)
+
+            return {
+
+              ...habit,
+
+              progress: progress > goal ? goal : progress,
+
+              completedDates,
+
+              streak: newStreak
+
+            }
+
+          })
+
+          return { habits }
+
+        }),
+
+
+
+      // --------------------------------------------------
+      // RESET DIARIO
+      // --------------------------------------------------
+
+      resetDailyProgress: () => {
+
+        const today = getToday()
+
+        const lastReset = get().lastProgressReset
+
+        if (today === lastReset) return
+
+        const habits = get().habits.map((habit) => ({
 
           ...habit,
 
-          completedDates: updatedDates,
+          progress: 0
 
-          streak: newStreak,
+        }))
 
-        }
+        set({
 
-      })
+          habits,
 
-      return { habits }
+          lastProgressReset: today
+
+        })
+
+      },
+
+
+
+      // --------------------------------------------------
+
+      isHabitDoneToday: (habit) => {
+
+        const today = getToday()
+
+        return habit.completedDates.includes(today)
+
+      },
 
     }),
 
-}))
+    {
+      name: "fluu-habits-storage",
+      storage: createJSONStorage(() => AsyncStorage),
+    }
+
+  )
+
+)

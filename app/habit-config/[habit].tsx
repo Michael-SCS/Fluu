@@ -1,126 +1,88 @@
 // --------------------------------------------------
 // PANTALLA DE CONFIGURACIÓN DE HÁBITO
-// Aquí el usuario define cuándo empieza y frecuencia
+// Configuración dinámica basada en el template
 // --------------------------------------------------
 
-// Hook de Expo Router para leer parámetros de la URL
 import { useLocalSearchParams, useRouter } from "expo-router";
-
-// Hook de React para manejar estado local
 import { useState } from "react";
 
-// Componentes básicos de React Native
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-// Plantillas de hábitos predefinidas
 import { habitTemplates } from "@/data/habitTemplates";
-
-// Store global de hábitos (Zustand)
 import { useHabitStore } from "@/store/habitStore";
 
 export default function HabitConfigScreen() {
 
-  // --------------------------------------------------
-  // OBTENER PARÁMETRO DE LA URL
-  // Ejemplo de ruta:
-  // /habit-config/drink-water
-  // --------------------------------------------------
-
   const { habit } = useLocalSearchParams();
 
-  // Router para navegar entre pantallas
   const router = useRouter();
-
-  // --------------------------------------------------
-  // BUSCAR LA PLANTILLA SELECCIONADA
-  // --------------------------------------------------
 
   const template = habitTemplates.find((h) => h.id === habit);
 
-  // --------------------------------------------------
-  // OBTENER FUNCIÓN DEL STORE
-  // --------------------------------------------------
-
   const addHabit = useHabitStore((state) => state.addHabit);
 
-  // --------------------------------------------------
-  // ESTADO LOCAL DE CONFIGURACIÓN
-  // --------------------------------------------------
+  const [repeatType, setRepeatType] =
+    useState<"daily" | "weekly" | "once">("daily");
 
-  // Tipo de repetición del hábito
-  const [repeatType, setRepeatType] = useState<"daily" | "weekly" | "once">("daily");
+  const [goal, setGoal] = useState(
+    template?.defaultGoal ? String(template.defaultGoal) : ""
+  );
 
-  // Fecha de inicio del hábito
-  // Se guarda en formato ISO
   const startDate = new Date().toISOString();
-
-  // --------------------------------------------------
-  // FUNCIÓN PARA CREAR EL HÁBITO
-  // --------------------------------------------------
 
   const createHabit = () => {
 
-    // Si por alguna razón no existe la plantilla
     if (!template) return;
 
-    // Guardamos el hábito en el store global
     addHabit({
 
-      // ID único basado en timestamp
       id: Date.now().toString(),
 
-      // Nombre del hábito
       name: template.name,
 
-      // Icono del template
       icon: template.icon,
 
-      // Fecha en la que comienza el hábito
       startDate: startDate,
 
-      // Tipo de repetición
       repeatType: repeatType,
 
-      // Historial de fechas completadas
-      // Inicialmente vacío
       completedDates: [],
 
-      // Streak inicial
       streak: 0,
 
-    });
+      goal: goal ? Number(goal) : template.defaultGoal,
 
-    // --------------------------------------------------
-    // VOLVER A LA PANTALLA TODAY
-    // --------------------------------------------------
+      progress: 0,
+
+      unit: template.unit,
+
+    });
 
     router.push("/");
 
   };
 
-  // --------------------------------------------------
-  // SI NO EXISTE LA PLANTILLA
-  // --------------------------------------------------
-
   if (!template) {
+
     return (
       <View style={styles.container}>
         <Text>Habit not found</Text>
       </View>
     );
-  }
 
-  // --------------------------------------------------
-  // UI DE LA PANTALLA
-  // --------------------------------------------------
+  }
 
   return (
 
     <View style={styles.container}>
 
-      {/* ---------------------------
-          TÍTULO DEL HÁBITO
-      ---------------------------- */}
+      {/* TÍTULO */}
 
       <Text style={styles.title}>
         {template.icon} {template.name}
@@ -131,37 +93,68 @@ export default function HabitConfigScreen() {
       </Text>
 
 
-      {/* ---------------------------
-          OPCIONES DE REPETICIÓN
-      ---------------------------- */}
+      {/* FREQUENCY */}
 
       <TouchableOpacity
-        style={styles.option}
+        style={[
+          styles.option,
+          repeatType === "daily" && styles.selected
+        ]}
         onPress={() => setRepeatType("daily")}
       >
         <Text>Daily</Text>
       </TouchableOpacity>
 
-
       <TouchableOpacity
-        style={styles.option}
+        style={[
+          styles.option,
+          repeatType === "weekly" && styles.selected
+        ]}
         onPress={() => setRepeatType("weekly")}
       >
         <Text>Weekly</Text>
       </TouchableOpacity>
 
-
       <TouchableOpacity
-        style={styles.option}
+        style={[
+          styles.option,
+          repeatType === "once" && styles.selected
+        ]}
         onPress={() => setRepeatType("once")}
       >
         <Text>Only once</Text>
       </TouchableOpacity>
 
 
-      {/* ---------------------------
-          BOTÓN CREAR HÁBITO
-      ---------------------------- */}
+      {/* META DEL HÁBITO */}
+
+      {template.question && (
+
+        <View style={styles.goalContainer}>
+
+          <Text style={styles.goalLabel}>
+            {template.question}
+          </Text>
+
+          <TextInput
+            style={styles.input}
+            keyboardType="numeric"
+            value={goal}
+            onChangeText={setGoal}
+          />
+
+          {template.unit && (
+            <Text style={styles.unit}>
+              unit: {template.unit}
+            </Text>
+          )}
+
+        </View>
+
+      )}
+
+
+      {/* BOTÓN CREAR */}
 
       <TouchableOpacity
         style={styles.saveButton}
@@ -174,15 +167,10 @@ export default function HabitConfigScreen() {
 
       </TouchableOpacity>
 
-
     </View>
+
   );
 }
-
-
-// --------------------------------------------------
-// ESTILOS
-// --------------------------------------------------
 
 const styles = StyleSheet.create({
 
@@ -209,6 +197,32 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F5F5",
     borderRadius: 12,
     marginBottom: 10,
+  },
+
+  selected: {
+    backgroundColor: "#E3F2FD",
+  },
+
+  goalContainer: {
+    marginTop: 20,
+  },
+
+  goalLabel: {
+    fontSize: 16,
+    marginBottom: 8,
+  },
+
+  input: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 16,
+  },
+
+  unit: {
+    marginTop: 6,
+    color: "#666",
   },
 
   saveButton: {
