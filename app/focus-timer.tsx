@@ -49,6 +49,7 @@ export default function FocusTimer() {
 
           Vibration.vibrate(400);
 
+          // TERMINÓ FOCUS
           if (!isBreak) {
 
             setIsBreak(true);
@@ -57,14 +58,19 @@ export default function FocusTimer() {
 
           }
 
+          // TERMINÓ BREAK
+
           if (session < totalSessions) {
 
             setSession((s) => s + 1);
+
             setIsBreak(false);
 
             return focusDuration;
 
           }
+
+          // TERMINÓ TODO
 
           setRunning(false);
 

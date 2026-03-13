@@ -28,29 +28,29 @@ export default function CreateFocusModal({ visible, onClose }: any) {
   const [breakSessions, setBreakSessions] = useState("4");
 
 
+
+
   const createFocus = () => {
 
-    addActivity({
+  addActivity({
 
-      id: Date.now().toString(),
+    id: Date.now().toString(),
 
-      title,
+    title,
 
-      description,
+    description,
 
-      duration: Number(studyTime),
+    duration: Number(studyTime),
 
-      breakTime: Number(breakTime),
+    breakTime: Number(breakTime),
 
-      sessions: Number(studySessions),
+    sessions: Number(studySessions),
 
-      breakSessions: Number(breakSessions),
+    usageCount: 0,
 
-      usageCount: 0,
+    custom: true
 
-      custom: true
-
-    });
+  });
 
     onClose();
 
