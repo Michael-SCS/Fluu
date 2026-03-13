@@ -1,6 +1,8 @@
 import FloatingAddButton from "@/components/FloatingAddButton";
 import FocusCard from "@/components/FocusCard";
+import HabitCard from "@/components/HabitCard";
 import TaskCard from "@/components/TaskCard";
+import { useHabitStore } from "@/store/habitStore";
 import { useRef, useState } from "react";
 import {
   ScrollView,
@@ -9,8 +11,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+
 import PagerView from "react-native-pager-view";
-import HabitCard from "../../components/HabitCard";
 
 const today = new Date();
 
@@ -20,23 +22,93 @@ const dateString = today.toLocaleDateString("en-US", {
   day: "numeric",
 });
 
+
+// --------------------------------------------------
+// 🔹 FUNCIÓN QUE DECIDE SI UN HÁBITO SE MUESTRA HOY
+// --------------------------------------------------
+
+function shouldShowHabitToday(habit: any) {
+
+  const today = new Date();
+  const startDate = new Date(habit.startDate);
+
+  // Si el hábito empieza en el futuro no se muestra
+  if (today < startDate) return false;
+
+  const weekday = today
+    .toLocaleDateString("en-US", { weekday: "short" })
+    .toLowerCase();
+
+  // Si es diario
+  if (habit.repeatType === "daily") return true;
+
+  // Si es solo una vez
+  if (habit.repeatType === "once") {
+    return today.toDateString() === startDate.toDateString();
+  }
+
+  // Si es semanal
+  if (habit.repeatType === "weekly") {
+    return habit.repeatConfig?.includes(weekday);
+  }
+
+  // Por defecto mostrar
+  return true;
+}
+
+
+
 export default function TodayScreen() {
+
   const pagerRef = useRef<PagerView>(null);
+
   const [page, setPage] = useState(1);
+
 
   const goToPage = (index: number) => {
     pagerRef.current?.setPage(index);
     setPage(index);
   };
 
-  const [habits] = useState([
-    { name: "Meditate", icon: "🧘", done: false, streak: 4 },
-    { name: "Read", icon: "📚", done: false, streak: 7 },
-    { name: "Workout", icon: "💪", done: false, streak: 2 },
-  ]);
+// --------------------------------------------------
+// FUNCIÓN QUE DECIDE SI EL HÁBITO SE MUESTRA HOY
+// --------------------------------------------------
+
+function shouldShowHabitToday(habit: any) {
+
+  const today = new Date();
+  const startDate = new Date(habit.startDate);
+
+  // Si empieza en el futuro no se muestra
+  if (today < startDate) return false;
+
+  const weekday = today
+    .toLocaleDateString("en-US", { weekday: "short" })
+    .toLowerCase();
+
+  if (habit.repeatType === "daily") return true;
+
+  if (habit.repeatType === "once") {
+    return today.toDateString() === startDate.toDateString();
+  }
+
+  if (habit.repeatType === "weekly") {
+    return habit.repeatConfig?.includes(weekday);
+  }
+
+  return true;
+}
+  // --------------------------------------------------
+  // 🔹 FILTRAR SOLO LOS HÁBITOS QUE TOCAN HOY
+  // --------------------------------------------------
+
+  const habits = useHabitStore((state) => state.habits);
+
+
 
   return (
     <View style={styles.container}>
+
       {/* HEADER */}
 
       <View style={styles.headerContainer}>
@@ -44,9 +116,11 @@ export default function TodayScreen() {
         <Text style={styles.date}>{dateString}</Text>
       </View>
 
+
       {/* TABS */}
 
       <View style={styles.tabs}>
+
         <TouchableOpacity onPress={() => goToPage(0)}>
           <Text style={[styles.tab, page === 0 && styles.activeTab]}>
             Tasks
@@ -64,7 +138,10 @@ export default function TodayScreen() {
             Focus
           </Text>
         </TouchableOpacity>
+
       </View>
+
+
 
       {/* SLIDE PAGES */}
 
@@ -74,71 +151,89 @@ export default function TodayScreen() {
         initialPage={1}
         onPageSelected={(e) => setPage(e.nativeEvent.position)}
       >
+
+
         {/* TASKS */}
 
         <ScrollView key="1" style={styles.page}>
+
           <View style={styles.section}>
+
             <Text style={styles.sectionTitle}>Tasks</Text>
 
-            <TaskCard
-              title="Study React"
-              subtitle="Programming"
-            />
+            <TaskCard title="Study React" subtitle="Programming" />
 
-            <TaskCard
-              title="Go to the gym"
-            />
+            <TaskCard title="Go to the gym" />
 
-            <TaskCard
-              title="Review code"
-            />
+            <TaskCard title="Review code" />
+
           </View>
+
         </ScrollView>
+
+
 
         {/* HABITS */}
 
         <ScrollView key="2" style={styles.page}>
+
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Habits</Text>
+
+
+
+
+            {/* 🔹 Mostrar solo los hábitos que corresponden hoy */}
 
             {habits.map((habit, index) => (
+
               <HabitCard
                 key={index}
                 icon={habit.icon}
                 name={habit.name}
-                done={habit.done}
+                done={habit.doneToday}
                 streak={habit.streak}
               />
+
             ))}
+
           </View>
+
         </ScrollView>
+
+
 
         {/* FOCUS */}
 
         <ScrollView key="3" style={styles.page}>
+
           <View style={styles.section}>
+
             <Text style={styles.sectionTitle}>Focus</Text>
 
-            <FocusCard
-              title="Read"
-              duration={25}
-            />
+            <FocusCard title="Read" duration={25} />
 
-            <FocusCard
-              title="Learn Spanish"
-              duration={30}
-            />
+            <FocusCard title="Learn Spanish" duration={30} />
+
           </View>
-        </ScrollView>
-      </PagerView>
-      <FloatingAddButton />
-    </View>
 
-    
+        </ScrollView>
+
+      </PagerView>
+
+
+
+      {/* BOTÓN FLOTANTE */}
+
+      <FloatingAddButton />
+
+    </View>
   );
 }
 
+
+
 const styles = StyleSheet.create({
+
   container: {
     flex: 1,
     paddingTop: 70,
@@ -196,34 +291,4 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
 
-  taskCard: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 20,
-
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-
-  task: {
-    fontSize: 16,
-    marginBottom: 10,
-  },
-
-  focusCard: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 20,
-
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
-  },
-
-  focusText: {
-    fontSize: 16,
-  },
 });
