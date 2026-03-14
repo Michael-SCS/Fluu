@@ -1,13 +1,47 @@
 import { useRouter } from "expo-router";
-import { FlatList, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+
+import {
+  Alert,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
 import { habitTemplates } from "../data/habitTemplates";
+
+import { useHabitStore } from "@/store/habitStore";
 
 export default function AddHabitScreen() {
 
   const router = useRouter();
 
-  const selectHabit = (habitId: string) => {
+  const habits = useHabitStore((state) => state.habits);
+
+  const selectHabit = (habitId: string, name: string) => {
+
+    /*
+    Verifica si ya existe un hábito con el mismo nombre
+    */
+
+    const exists = habits.some(
+      (h) => h.title.toLowerCase() === name.toLowerCase()
+    );
+
+    if (exists) {
+
+      Alert.alert(
+        "Habit already exists",
+        "You already added this habit."
+      );
+
+      return;
+
+    }
+
     router.push(`/habit-config/${habitId}` as any);
+
   };
 
   return (
@@ -26,7 +60,9 @@ export default function AddHabitScreen() {
 
           <TouchableOpacity
             style={styles.card}
-            onPress={() => selectHabit(item.id)}
+            onPress={() =>
+              selectHabit(item.id, item.name)
+            }
           >
 
             <Text style={styles.icon}>
@@ -53,6 +89,7 @@ export default function AddHabitScreen() {
     </View>
 
   );
+
 }
 
 const styles = StyleSheet.create({

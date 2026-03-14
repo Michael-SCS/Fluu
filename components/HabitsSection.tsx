@@ -1,89 +1,39 @@
-import { useHabitStore } from "@/store/habitStore";
-import { ScrollView, StyleSheet, Text } from "react-native";
-import HabitCard from "./HabitCard";
+import { FlatList, View } from "react-native"
 
-function shouldShowHabitToday(habit: any) {
+import { useHabitStore } from "@/store/habitStore"
 
-  const today = new Date();
-  const startDate = new Date(habit.startDate);
+import HabitCard from "./HabitCard"
 
-  if (today < startDate) return false;
+import { shouldShowHabitToday } from "./habitLogic"
 
-  if (habit.repeatType === "daily") return true;
 
-  if (habit.repeatType === "once") {
-    return today.toDateString() === startDate.toDateString();
-  }
-
-  if (habit.repeatType === "weekly") {
-    const todayDay = today.getDay();
-    return habit.repeatConfig?.includes(todayDay);
-  }
-
-  return true;
-}
 
 export default function HabitsSection() {
 
-  const habits =
-    useHabitStore((state) => state.habits);
+  const habits = useHabitStore(state => state.habits)
+
+
+
+  const todayHabits = habits.filter(habit =>
+    shouldShowHabitToday(habit)
+  )
+
+
 
   return (
 
-    <ScrollView contentContainerStyle={styles.section}>
+    <View style={{ flex: 1 }}>
 
-      <Text style={styles.sectionTitle}>
-        Habits
-      </Text>
+      <FlatList
+        data={todayHabits}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <HabitCard habit={item} />
+        )}
+      />
 
-      {habits
-        .filter((habit) => shouldShowHabitToday(habit))
-        .map((habit) => (
+    </View>
 
-          <HabitCard
-            key={habit.id}
-            id={habit.id}
-            icon={habit.icon}
-            name={habit.name}
-            goal={habit.goal}
-            progress={habit.progress}
-            unit={habit.unit}
-            streak={habit.streak}
-          />
+  )
 
-        ))}
-
-      {habits.length === 0 && (
-
-        <Text style={styles.emptyState}>
-          No habits yet. Tap + to add one.
-        </Text>
-
-      )}
-
-    </ScrollView>
-
-  );
 }
-
-const styles = StyleSheet.create({
-
-  section: {
-    paddingHorizontal: 20,
-    paddingBottom: 60,
-  },
-
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 14,
-    marginTop: 18,
-  },
-
-  emptyState: {
-    marginTop: 20,
-    color: "#888",
-    textAlign: "center",
-  },
-
-});

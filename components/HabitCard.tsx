@@ -1,141 +1,84 @@
-import { useHabitStore } from "@/store/habitStore";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useHabitStore } from "@/store/habitStore"
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native"
 
-type HabitCardProps = {
-  id: string
-  icon: string
-  name: string
-  progress?: number
-  goal?: number
-  unit?: string
-  streak?: number
-}
 
-export default function HabitCard({
-  id,
-  icon,
-  name,
-  progress,
-  goal,
-  unit,
-  streak
-}: HabitCardProps) {
 
-  const incrementHabitProgress =
-    useHabitStore((state) => state.incrementHabitProgress)
+export default function HabitCard({ habit }: any) {
 
-  const percent =
-    goal ? (progress ?? 0) / goal : 0
+  const increment = useHabitStore(s => s.incrementHabitProgress)
 
   return (
 
     <TouchableOpacity
       style={styles.card}
-      onPress={() => incrementHabitProgress(id)}
+      onPress={() => increment(habit.id)}
     >
 
       <View style={styles.row}>
 
-        <Text style={styles.icon}>{icon}</Text>
+        <Text style={styles.icon}>
+          {habit.icon}
+        </Text>
 
         <View style={{ flex: 1 }}>
 
-          <Text style={styles.name}>{name}</Text>
+          <Text style={styles.title}>
+            {habit.title}
+          </Text>
 
-          {goal && (
+          <Text style={styles.description}>
+            {habit.description}
+          </Text>
 
-            <Text style={styles.meta}>
-              {progress ?? 0} / {goal} {unit}
-            </Text>
-
-          )}
+          <Text style={styles.progress}>
+            {habit.progress} / {habit.goal}
+          </Text>
 
         </View>
 
       </View>
 
-
-      {goal && (
-
-        <View style={styles.progressBar}>
-
-          <View
-            style={[
-              styles.progressFill,
-              { width: `${percent * 100}%` }
-            ]}
-          />
-
-        </View>
-
-      )}
-
-
-      {streak ? (
-
-        <Text style={styles.streak}>
-          🔥 {streak} day streak
-        </Text>
-
-      ) : null}
-
     </TouchableOpacity>
+
   )
+
 }
+
+
 
 const styles = StyleSheet.create({
 
   card: {
     backgroundColor: "white",
-    padding: 18,
-    borderRadius: 16,
-    marginBottom: 14,
-
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-
-    elevation: 2,
+    padding: 16,
+    borderRadius: 14,
+    marginHorizontal: 20,
+    marginBottom: 12
   },
 
   row: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
+    alignItems: "center"
   },
 
   icon: {
-    fontSize: 24,
-    marginRight: 10,
+    fontSize: 26,
+    marginRight: 12
   },
 
-  name: {
+  title: {
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "600"
   },
 
-  meta: {
-    fontSize: 13,
-    color: "#777",
-    marginTop: 2,
+  description: {
+    color: "#666",
+    marginTop: 2
   },
 
-  progressBar: {
-    height: 6,
-    backgroundColor: "#eee",
-    borderRadius: 10,
-  },
+  progress: {
+    marginTop: 6,
+    fontWeight: "500"
+  }
 
-  progressFill: {
-    height: 6,
-    backgroundColor: "#4CAF50",
-    borderRadius: 10,
-  },
-
-  streak: {
-    marginTop: 8,
-    color: "#FF6B00",
-    fontWeight: "600",
-  },
-
-});
+})
