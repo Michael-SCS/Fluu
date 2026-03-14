@@ -1,121 +1,63 @@
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import { useState } from "react";
-
 import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
-import { Ionicons } from "@expo/vector-icons";
-
-import { useRouter } from "expo-router";
-
+const MENU_ITEMS = [
+  { label: "Create Task",  route: "/add-task"  },
+  { label: "Create Habit", route: "/add-habit" },
+  { label: "Create Focus", route: "/add-focus" },
+];
 
 export default function FloatingAddButton() {
-
-  // Controla si el menú está abierto
   const [open, setOpen] = useState(false);
-
-  // Router de Expo para navegar entre pantallas
   const router = useRouter();
 
   return (
-
     <View style={styles.container}>
 
       {/* BOTONES DEL MENÚ */}
-
       {open && (
-
         <View style={styles.menu}>
-
-
-          {/* TASK */}
-
-          <TouchableOpacity
-            style={styles.option}
-            onPress={() => {
-
-              setOpen(false);
-
-              router.push("/add-task");
-
-            }}
-          >
-            <Text style={styles.optionText}>
-              Crerate Task
-            </Text>
-          </TouchableOpacity>
-
-
-
-          {/* HABIT */}
-
-          <TouchableOpacity
-            style={styles.option}
-            onPress={() => {
-
-              setOpen(false);
-
-              router.push("/add-habit");
-
-            }}
-          >
-            <Text style={styles.optionText}>
-              Create Habit
-            </Text>
-          </TouchableOpacity>
-
-
-
-          {/* FOCUS */}
-
-          <TouchableOpacity
-            style={styles.option}
-            onPress={() => {
-
-              setOpen(false);
-
-              router.push("/add-focus");
-
-            }}
-          >
-            <Text style={styles.optionText}>
-              Create Focus
-            </Text>
-          </TouchableOpacity>
-
-
+          {MENU_ITEMS.map(({ label, route }) => (
+            <TouchableOpacity
+              key={route}
+              style={styles.option}
+              activeOpacity={0.75}
+              onPress={() => {
+                setOpen(false);
+                router.push(route as any);
+              }}
+            >
+              <Text style={styles.optionText}>{label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
-
       )}
 
-
-
       {/* BOTÓN + */}
-
       <TouchableOpacity
-        style={styles.button}
+        style={[styles.button, open && styles.buttonOpen]}
         onPress={() => setOpen(!open)}
+        activeOpacity={0.85}
       >
         <Ionicons
-          name="add"
-          size={28}
-          color="white"
+          name={open ? "close" : "add"}
+          size={26}
+          color="#FAFAF8"
         />
       </TouchableOpacity>
 
     </View>
-
   );
-
 }
 
-
-
 const styles = StyleSheet.create({
-
   container: {
     position: "absolute",
     right: 24,
@@ -124,30 +66,51 @@ const styles = StyleSheet.create({
   },
 
   menu: {
-    marginBottom: 10,
-    gap: 10,
+    marginBottom: 12,
+    gap: 8,
+    alignItems: "flex-end",
   },
 
   option: {
-    backgroundColor: "white",
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    elevation: 3,
-  },
-
-  optionText: {
-    fontWeight: "600",
-  },
-
-  button: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#4F46E5",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#F0EDE8",
+    shadowColor: "#1C1A17",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
     elevation: 4,
   },
 
+  optionText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#1C1A17",
+    letterSpacing: -0.1,
+  },
+
+  button: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: "#1C1A17",
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#1C1A17",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 12,
+    elevation: 6,
+  },
+
+  buttonOpen: {
+    backgroundColor: "#3D3A35",
+  },
+
+  optionIcon: {
+    fontSize: 14,
+  },
 });

@@ -24,7 +24,6 @@ const dateString = today.toLocaleDateString("en-US", {
   day: "numeric",
 });
 
-// Íconos SVG-inline como texto Unicode para las tabs
 const TAB_ICONS = ["✓", "◎", "⏱"];
 const TAB_LABELS = ["Tasks", "Habits", "Focus"];
 
@@ -33,7 +32,6 @@ export default function TodayScreen() {
   const pagerRef = useRef<PagerView>(null);
   const [page, setPage] = useState(1);
 
-  // Animación del indicador deslizante de tabs
   const indicatorAnim = useRef(new Animated.Value(1)).current;
 
   const resetDailyProgress = useHabitStore((state) => state.resetDailyProgress);
@@ -42,7 +40,6 @@ export default function TodayScreen() {
     resetDailyProgress();
   }, []);
 
-  // Navega a una página y anima el indicador
   const goToPage = (index: number) => {
     pagerRef.current?.setPage(index);
     setPage(index);
@@ -54,7 +51,6 @@ export default function TodayScreen() {
     }).start();
   };
 
-  // Cuando el usuario swipea, sincronizamos el indicador
   const onPageSelected = (e: any) => {
     const pos = e.nativeEvent.position;
     setPage(pos);
@@ -66,7 +62,6 @@ export default function TodayScreen() {
     }).start();
   };
 
-  // El indicador ocupa 1/3 del ancho del contenedor de tabs
   const indicatorLeft = indicatorAnim.interpolate({
     inputRange: [0, 1, 2],
     outputRange: ["0%", "33.33%", "66.66%"],
@@ -74,19 +69,12 @@ export default function TodayScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-
-      {/* ── STATUS BAR visible con íconos oscuros sobre fondo claro ── */}
-      <StatusBar style="dark" backgroundColor="#F5F6FA" translucent={false} />
+      <StatusBar style="dark" backgroundColor="#FAFAF8" translucent={false} />
 
       {/* ── ENCABEZADO ─────────────────────────────────────────────────── */}
       <View style={styles.headerContainer}>
-        {/* Etiqueta pequeña de contexto */}
         <Text style={styles.overline}>MY DAY</Text>
-
-        {/* Título principal */}
         <Text style={styles.header}>Today</Text>
-
-        {/* Fecha con separador decorativo */}
         <View style={styles.dateRow}>
           <View style={styles.dateDot} />
           <Text style={styles.date}>{dateString}</Text>
@@ -96,11 +84,8 @@ export default function TodayScreen() {
       {/* ── TABS con indicador animado ──────────────────────────────────── */}
       <View style={styles.tabsWrapper}>
         <View style={styles.tabsContainer}>
-
-          {/* Píldora deslizante de fondo (animated) */}
           <Animated.View style={[styles.tabIndicator, { left: indicatorLeft }]} />
 
-          {/* Botones de tab */}
           {TAB_LABELS.map((label, index) => {
             const isActive = page === index;
             return (
@@ -110,11 +95,9 @@ export default function TodayScreen() {
                 onPress={() => goToPage(index)}
                 activeOpacity={0.7}
               >
-                {/* Ícono de tab */}
                 <Text style={[styles.tabIcon, isActive && styles.tabIconActive]}>
                   {TAB_ICONS[index]}
                 </Text>
-                {/* Etiqueta de tab */}
                 <Text style={[styles.tabText, isActive && styles.activeText]}>
                   {label}
                 </Text>
@@ -136,59 +119,53 @@ export default function TodayScreen() {
         <FocusSection key="3" />
       </PagerView>
 
-      {/* ── BOTÓN FLOTANTE de acción ───────────────────────────────────── */}
       <FloatingAddButton />
-
     </SafeAreaView>
   );
 }
 
 // ─── Estilos ──────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
-
-  // Fondo general levemente cálido, lejos del blanco puro
   container: {
     flex: 1,
-    backgroundColor: "#F5F6FA",
+    backgroundColor: "#FAFAF8",
   },
 
   // ── Encabezado ──────────────────────────────────────────────────────────────
   headerContainer: {
-    paddingHorizontal: 28,
-    paddingTop: 10,
-    marginBottom: 20,
-    //Centrar
+    paddingHorizontal: 24,
+    paddingTop: 12,
+    paddingBottom: 24,
     alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#EFEFEB",
+    marginBottom: 16,
   },
 
-  // Etiqueta de contexto en mayúsculas pequeñas
   overline: {
     fontSize: 11,
     fontWeight: "700",
     letterSpacing: 2.5,
-    color: "#A78BFA",          // violeta suave — acento de marca
-    marginBottom: 4,
+    color: "#A78BFA",
+    marginBottom: 8,
     textTransform: "uppercase",
   },
 
-  // Título grande y bold
   header: {
     fontSize: 40,
     fontWeight: "800",
-    color: "#0F0F14",
+    color: "#1C1A17",
     letterSpacing: -1.2,
     lineHeight: 44,
   },
 
-  // Fila con punto decorativo + fecha
   dateRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 6,
+    marginTop: 8,
     gap: 8,
   },
 
-  // Punto de acento junto a la fecha
   dateDot: {
     width: 6,
     height: 6,
@@ -197,7 +174,7 @@ const styles = StyleSheet.create({
   },
 
   date: {
-    color: "#9CA3AF",
+    color: "#9C9489",
     fontSize: 14,
     fontWeight: "500",
     letterSpacing: 0.2,
@@ -205,22 +182,20 @@ const styles = StyleSheet.create({
 
   // ── Tabs ────────────────────────────────────────────────────────────────────
   tabsWrapper: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     marginBottom: 16,
   },
 
-  // Contenedor de fondo con borde sutil
   tabsContainer: {
     flexDirection: "row",
-    backgroundColor: "#ECEEF5",
+    backgroundColor: "#F0EDE8",
     borderRadius: 18,
     padding: 5,
     position: "relative",
     borderWidth: 1,
-    borderColor: "#E2E4EE",
+    borderColor: "#E8E3DC",
   },
 
-  // Píldora animada de fondo para el tab activo
   tabIndicator: {
     position: "absolute",
     top: 5,
@@ -228,43 +203,39 @@ const styles = StyleSheet.create({
     width: "33.33%",
     backgroundColor: "#FFFFFF",
     borderRadius: 14,
-
-    // Sombra pronunciada para dar profundidad
-    shadowColor: "#6D28D9",
-    shadowOpacity: 0.12,
+    shadowColor: "#7C3AED",
+    shadowOpacity: 0.10,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
     elevation: 4,
   },
 
-  // Cada botón de tab ocupa 1/3 del espacio
   tabButton: {
     flex: 1,
     paddingVertical: 10,
     alignItems: "center",
     gap: 2,
-    zIndex: 1,             // encima del indicador para recibir toques
+    zIndex: 1,
   },
 
-  // Ícono Unicode pequeño arriba del label
   tabIcon: {
     fontSize: 13,
-    color: "#9CA3AF",
+    color: "#B5A898",
   },
 
   tabIconActive: {
-    color: "#7C3AED",      // violeta oscuro cuando está activo
+    color: "#7C3AED",
   },
 
   tabText: {
     fontSize: 12,
     fontWeight: "600",
-    color: "#9CA3AF",
+    color: "#B5A898",
     letterSpacing: 0.3,
   },
 
   activeText: {
-    color: "#0F0F14",
+    color: "#1C1A17",
   },
 
   // ── Paginador ───────────────────────────────────────────────────────────────
