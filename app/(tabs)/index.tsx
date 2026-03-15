@@ -7,298 +7,265 @@ import { useHabitStore } from "@/store/habitStore";
 import { useTasksStore } from "@/store/tasksStore";
 
 import { StatusBar } from "expo-status-bar";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useEffect, useRef, useState } from "react";
 
 import {
   Animated,
-  Platform,
-  StatusBar as RNStatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
 } from "react-native";
 
 import PagerView from "react-native-pager-view";
 
 const today = new Date();
+const weekday  = today.toLocaleDateString("en-US", { weekday: "long" });
+const monthDay = today.toLocaleDateString("en-US", { month: "long", day: "numeric" });
 
-const dateString = today.toLocaleDateString("en-US",{
-weekday:"long",
-month:"short",
-day:"numeric"
-});
+const TABS = [
+  { label: "Tasks",  icon: "✓" },
+  { label: "Habits", icon: "◎" },
+  { label: "Focus",  icon: "⏱" },
+];
 
-const TAB_ICONS = ["✓","◎","⏱"];
-const TAB_LABELS = ["Tasks","Habits","Focus"];
+export default function Index() {
+  const insets = useSafeAreaInsets();
 
-export default function Index(){
+  const pagerRef      = useRef<PagerView>(null);
+  const [page, setPage] = useState(0);
+  const indicatorAnim   = useRef(new Animated.Value(0)).current;
 
-const pagerRef = useRef<PagerView>(null)
+  const resetDailyProgress = useHabitStore((s) => s.resetDailyProgress);
+  const refreshDailyTasks  = useTasksStore((s) => s.refreshDailyTasks);
 
-const [page,setPage] = useState(0)
+  useEffect(() => {
+    resetDailyProgress();
+    refreshDailyTasks();
+  }, []);
 
-const indicatorAnim = useRef(new Animated.Value(0)).current
+  function goToPage(index: number) {
+    pagerRef.current?.setPage(index);
+    setPage(index);
+    Animated.spring(indicatorAnim, {
+      toValue: index,
+      useNativeDriver: false,
+      tension: 70,
+      friction: 11,
+    }).start();
+  }
 
-const resetDailyProgress =
-useHabitStore(state=>state.resetDailyProgress)
+  function onPageSelected(e: any) {
+    const pos = e.nativeEvent.position;
+    setPage(pos);
+    Animated.spring(indicatorAnim, {
+      toValue: pos,
+      useNativeDriver: false,
+      tension: 70,
+      friction: 11,
+    }).start();
+  }
 
-const refreshDailyTasks =
-useTasksStore(state=>state.refreshDailyTasks)
+  const indicatorLeft = indicatorAnim.interpolate({
+    inputRange: [0, 1, 2],
+    outputRange: ["0%", "33.33%", "66.66%"],
+  });
 
-useEffect(()=>{
+  return (
+    <View style={styles.container}>
+      <StatusBar style="dark" />
+      <View style={{ height: insets.top }} />
 
-/* reset habits */
+      {/* ── HEADER ── */}
+      <View style={styles.header}>
+        <Text style={styles.overline}>{weekday}</Text>
+        <Text style={styles.title}>Today</Text>
+        <Text style={styles.date}>{monthDay}</Text>
+        <View style={styles.headerRule}>
+          <View style={styles.ruleLine} />
+          <View style={styles.ruleDot} />
+          <View style={styles.ruleLine} />
+        </View>
+      </View>
 
-resetDailyProgress()
+      {/* ── TABS ── */}
+      <View style={styles.tabsOuter}>
+        <View style={styles.tabsTrack}>
+          <Animated.View style={[styles.tabIndicator, { left: indicatorLeft }]} />
+          {TABS.map(({ label, icon }, index) => {
+            const active = page === index;
+            return (
+              <TouchableOpacity
+                key={label}
+                style={styles.tabBtn}
+                onPress={() => goToPage(index)}
+                activeOpacity={0.75}
+              >
+                <View style={styles.tabInner}>
+                  <Text style={[styles.tabIcon, active && styles.tabIconActive]}>
+                    {icon}
+                  </Text>
+                  <Text style={[styles.tabLabel, active && styles.tabLabelActive]}>
+                    {label}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-/* refresh repeat tasks */
+        <View style={styles.dotsRow}>
+          {TABS.map((_, i) => (
+            <View key={i} style={[styles.dot, page === i && styles.dotActive]} />
+          ))}
+        </View>
+      </View>
 
-refreshDailyTasks()
+      {/* ── CONTENT ── */}
+      <PagerView
+        ref={pagerRef}
+        style={styles.pager}
+        initialPage={0}
+        onPageSelected={onPageSelected}
+      >
+        <TasksSection key="1" />
+        <HabitsSection key="2" />
+        <FocusSection key="3" />
+      </PagerView>
 
-},[])
-
-function goToPage(index:number){
-
-pagerRef.current?.setPage(index)
-
-setPage(index)
-
-Animated.spring(indicatorAnim,{
-toValue:index,
-useNativeDriver:false,
-tension:60,
-friction:10
-}).start()
-
+      <FloatingAddButton />
+    </View>
+  );
 }
 
-function onPageSelected(e:any){
-
-const pos = e.nativeEvent.position
-
-setPage(pos)
-
-Animated.spring(indicatorAnim,{
-toValue:pos,
-useNativeDriver:false,
-tension:60,
-friction:10
-}).start()
-
-}
-
-const indicatorLeft = indicatorAnim.interpolate({
-inputRange:[0,1,2],
-outputRange:["0%","33.33%","66.66%"]
-})
-
-return(
-
-<View style={styles.container}>
-
-{/* ANDROID STATUS BAR SPACE */}
-
-<View style={styles.statusBar}/>
-
-<StatusBar style="dark" backgroundColor="#F8F8F6"/>
-
-{/* HEADER */}
-
-<View style={styles.headerContainer}>
-
-<Text style={styles.overline}>
-MY DAY
-</Text>
-
-<Text style={styles.header}>
-Today
-</Text>
-
-<Text style={styles.date}>
-{dateString}
-</Text>
-
-</View>
-
-{/* TABS */}
-
-<View style={styles.tabsWrapper}>
-
-<View style={styles.tabsContainer}>
-
-<Animated.View
-style={[
-styles.tabIndicator,
-{left:indicatorLeft}
-]}
-/>
-
-{TAB_LABELS.map((label,index)=>{
-
-const isActive = page===index
-
-return(
-
-<TouchableOpacity
-key={label}
-style={styles.tabButton}
-onPress={()=>goToPage(index)}
-activeOpacity={0.7}
->
-
-<Text style={[
-styles.tabIcon,
-isActive && styles.tabIconActive
-]}>
-{TAB_ICONS[index]}
-</Text>
-
-<Text style={[
-styles.tabText,
-isActive && styles.activeText
-]}>
-{label}
-</Text>
-
-</TouchableOpacity>
-
-)
-
-})}
-
-</View>
-
-</View>
-
-{/* CONTENT */}
-
-<PagerView
-ref={pagerRef}
-style={styles.pager}
-initialPage={0}
-onPageSelected={onPageSelected}
->
-
-<TasksSection key="1"/>
-<HabitsSection key="2"/>
-<FocusSection key="3"/>
-
-</PagerView>
-
-<FloatingAddButton/>
-
-</View>
-
-)
-
-}
+const PURPLE = "#7F77DD";
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F5F4F0",
+  },
 
-container:{
-flex:1,
-backgroundColor:"#F8F8F6"
-},
+  /* ── HEADER ── */
+  header: {
+    alignItems: "center",
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 22,
+  },
+  overline: {
+    fontSize: 11,
+    fontWeight: "600",
+    letterSpacing: 2.5,
+    color: "#B0AFA8",
+    textTransform: "uppercase",
+    marginBottom: 6,
+  },
+  title: {
+    fontSize: 44,
+    fontWeight: "700",
+    color: "#111",
+    letterSpacing: -1.5,
+    lineHeight: 48,
+  },
+  date: {
+    fontSize: 14,
+    color: "#9CA3AF",
+    fontWeight: "500",
+    marginTop: 4,
+  },
+  headerRule: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginTop: 18,
+    width: "50%",
+  },
+  ruleLine: {
+    flex: 1,
+    height: 0.5,
+    backgroundColor: "#DDDBD5",
+  },
+  ruleDot: {
+    width: 5,
+    height: 5,
+    borderRadius: 99,
+    backgroundColor: PURPLE,
+    opacity: 0.5,
+  },
 
-/* STATUS BAR SPACE */
+  /* ── TABS ── */
+  tabsOuter: {
+    paddingHorizontal: 20,
+    marginBottom: 10,
+    gap: 8,
+  },
+  tabsTrack: {
+    flexDirection: "row",
+    backgroundColor: "#ECEAE4",
+    borderRadius: 16,
+    padding: 4,
+    position: "relative",
+    borderWidth: 0.5,
+    borderColor: "#E0DED8",
+  },
+  tabIndicator: {
+    position: "absolute",
+    top: 4,
+    bottom: 4,
+    width: "33.33%",
+    backgroundColor: "white",
+    borderRadius: 12,
+    borderWidth: 0.5,
+    borderColor: "#E5E5E0",
+  },
+  tabBtn: {
+    flex: 1,
+    zIndex: 1,
+    alignItems: "center",
+  },
+  tabInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+  },
+  tabIcon: {
+    fontSize: 13,
+    color: "#B0AFA8",
+  },
+  tabIconActive: {
+    color: PURPLE,
+  },
+  tabLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#B0AFA8",
+  },
+  tabLabelActive: {
+    color: "#111",
+  },
+  dotsRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 5,
+  },
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 99,
+    backgroundColor: "#DDDBD5",
+  },
+  dotActive: {
+    width: 16,
+    backgroundColor: PURPLE,
+  },
 
-statusBar:{
-height:Platform.OS==="android"
-? RNStatusBar.currentHeight
-:0
-},
-
-/* HEADER */
-
-headerContainer:{
-paddingHorizontal:28,
-paddingTop:10,
-marginBottom:18
-},
-
-overline:{
-fontSize:11,
-fontWeight:"700",
-letterSpacing:2,
-color:"#A78BFA",
-marginBottom:4
-},
-
-header:{
-fontSize:40,
-fontWeight:"800",
-color:"#0F0F14",
-letterSpacing:-1.2
-},
-
-date:{
-marginTop:6,
-fontSize:14,
-color:"#8A8A8F",
-fontWeight:"500"
-},
-
-/* TABS */
-
-tabsWrapper:{
-paddingHorizontal:20,
-marginBottom:14
-},
-
-tabsContainer:{
-flexDirection:"row",
-backgroundColor:"#EFEFEF",
-borderRadius:16,
-padding:4,
-position:"relative"
-},
-
-tabIndicator:{
-position:"absolute",
-top:4,
-bottom:4,
-width:"33.33%",
-backgroundColor:"#FFFFFF",
-borderRadius:12,
-shadowColor:"#000",
-shadowOpacity:0.08,
-shadowRadius:6,
-shadowOffset:{width:0,height:2},
-elevation:2
-},
-
-tabButton:{
-flex:1,
-paddingVertical:9,
-alignItems:"center",
-zIndex:1
-},
-
-tabIcon:{
-fontSize:13,
-color:"#9CA3AF"
-},
-
-tabIconActive:{
-color:"#7C3AED"
-},
-
-tabText:{
-fontSize:12,
-fontWeight:"600",
-color:"#9CA3AF"
-},
-
-activeText:{
-color:"#0F0F14"
-},
-
-/* PAGER */
-
-pager:{
-flex:1
-}
-
-})
+  /* ── PAGER ── */
+  pager: {
+    flex: 1,
+  },
+});

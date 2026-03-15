@@ -1,12 +1,12 @@
 import { useState } from "react"
 import {
-    Animated,
-    FlatList,
-    Modal,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Animated,
+  FlatList,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native"
 
 import { useTasksStore } from "@/store/tasksStore"
@@ -16,7 +16,7 @@ export default function TaskCard({ task }: any) {
   const deleteTask = useTasksStore((s) => s.deleteTask)
   const toggleItem = useTasksStore((s) => s.toggleItem)
 
-  const [open, setOpen] = useState(false)
+  const [open, setOpen]       = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const slideAnim = useState(new Animated.Value(300))[0]
 
@@ -36,38 +36,46 @@ export default function TaskCard({ task }: any) {
   ========================= */
 
   if (task.type === "grocery") {
-    const total: number = task.items?.reduce(
-      (sum: number, i: any) => sum + i.quantity * i.price, 0
-    ) ?? 0
-
-    const preview = task.items?.slice(0, 3) ?? []
+    const total     = task.items?.reduce((s: number, i: any) => s + i.quantity * i.price, 0) ?? 0
+    const preview   = task.items?.slice(0, 3) ?? []
     const completed = task.items?.filter((i: any) => i.checked).length ?? 0
     const itemCount = task.items?.length ?? 0
-    const progress = itemCount > 0 ? completed / itemCount : 0
+    const progress  = itemCount > 0 ? completed / itemCount : 0
+    const allDone   = itemCount > 0 && completed === itemCount
 
     return (
       <TouchableOpacity
-        style={styles.card}
+        style={[styles.card, allDone && styles.cardDone]}
         activeOpacity={0.9}
         onPress={() => setOpen(true)}
         onLongPress={openMenu}
       >
         <View style={styles.cardTopRow}>
-          <View style={styles.cardIconWrap}>
+          <View style={[styles.cardIconWrap, allDone && styles.cardIconWrapDone]}>
             <Text style={styles.cardIcon}>🛒</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={styles.cardTitle}>Grocery list</Text>
-            <Text style={styles.cardMeta}>
+            <Text style={[styles.cardTitle, allDone && styles.cardTitleDone]}>
+              Grocery list
+            </Text>
+            <Text style={[styles.cardMeta, allDone && styles.cardMetaDone]}>
               {completed}/{itemCount} items picked up
             </Text>
           </View>
-          <Text style={styles.cardTotal}>${total.toFixed(2)}</Text>
+          <Text style={[styles.cardTotal, allDone && styles.cardTotalDone]}>
+            ${total.toFixed(2)}
+          </Text>
         </View>
 
         {/* progress bar */}
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${progress * 100}%` as any }]} />
+        <View style={[styles.progressTrack, allDone && styles.progressTrackDone]}>
+          <View
+            style={[
+              styles.progressFill,
+              allDone && styles.progressFillDone,
+              { width: `${progress * 100}%` as any },
+            ]}
+          />
         </View>
 
         {/* preview items */}
@@ -80,14 +88,16 @@ export default function TaskCard({ task }: any) {
                   {item.name}
                 </Text>
                 {item.price > 0 && (
-                  <Text style={styles.previewPrice}>
+                  <Text style={[styles.previewPrice, allDone && styles.previewPriceDone]}>
                     ${(item.quantity * item.price).toFixed(2)}
                   </Text>
                 )}
               </View>
             ))}
             {itemCount > 3 && (
-              <Text style={styles.previewMore}>+{itemCount - 3} more</Text>
+              <Text style={[styles.previewMore, allDone && styles.previewMoreDone]}>
+                +{itemCount - 3} more
+              </Text>
             )}
           </View>
         )}
@@ -159,7 +169,7 @@ export default function TaskCard({ task }: any) {
           </View>
         </Modal>
 
-        {/* BOTTOM SHEET MENU */}
+        {/* BOTTOM SHEET */}
         <Modal transparent visible={menuOpen} animationType="none" onRequestClose={closeMenu}>
           <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={closeMenu}>
             <Animated.View style={[styles.sheet, { transform: [{ translateY: slideAnim }] }]}>
@@ -189,7 +199,7 @@ export default function TaskCard({ task }: any) {
 
   return (
     <TouchableOpacity
-      style={[styles.card, task.completed && styles.cardCompleted]}
+      style={[styles.card, task.completed && styles.cardDone]}
       activeOpacity={0.9}
       onPress={() => toggleTask(task.id)}
       onLongPress={openMenu}
@@ -203,12 +213,19 @@ export default function TaskCard({ task }: any) {
             {task.title}
           </Text>
           {!!task.description && (
-            <Text style={styles.cardMeta}>{task.description}</Text>
+            <Text style={[styles.cardMeta, task.completed && styles.cardMetaDone]}>
+              {task.description}
+            </Text>
           )}
         </View>
+        {task.completed && (
+          <View style={styles.doneBadge}>
+            <Text style={styles.doneBadgeText}>✓ Done</Text>
+          </View>
+        )}
       </View>
 
-      {/* BOTTOM SHEET MENU */}
+      {/* BOTTOM SHEET */}
       <Modal transparent visible={menuOpen} animationType="none" onRequestClose={closeMenu}>
         <TouchableOpacity style={styles.overlay} activeOpacity={1} onPress={closeMenu}>
           <Animated.View style={[styles.sheet, { transform: [{ translateY: slideAnim }] }]}>
@@ -232,9 +249,13 @@ export default function TaskCard({ task }: any) {
   )
 }
 
-const PURPLE = "#7F77DD"
+const PURPLE      = "#7F77DD"
 const PURPLE_DARK = "#534AB7"
-const GREEN = "#1D9E75"
+const GREEN       = "#1D9E75"
+const GREEN_BG    = "#F0FDF4"
+const GREEN_BDR   = "#86EFAC"
+const GREEN_DARK  = "#166534"
+const GREEN_MID   = "#4ADE80"
 
 const styles = StyleSheet.create({
   /* ── CARD ── */
@@ -247,14 +268,17 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
     borderColor: "#E5E5E0",
   },
-  cardCompleted: {
-    opacity: 0.6,
+  cardDone: {
+    backgroundColor: GREEN_BG,
+    borderColor: GREEN_BDR,
   },
   cardTopRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
   },
+
+  /* icon wrap */
   cardIconWrap: {
     width: 40,
     height: 40,
@@ -263,26 +287,55 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  cardIconWrapDone: {
+    backgroundColor: "#DCFCE7",
+  },
   cardIcon: { fontSize: 20 },
+
+  /* texts */
   cardTitle: {
     fontSize: 15,
     fontWeight: "600",
     color: "#111",
     letterSpacing: -0.2,
   },
+  cardTitleDone: {
+    color: GREEN_DARK,
+  },
   cardMeta: {
     fontSize: 12,
     color: "#9CA3AF",
     marginTop: 1,
+  },
+  cardMetaDone: {
+    color: GREEN_MID,
   },
   cardTotal: {
     fontSize: 15,
     fontWeight: "600",
     color: "#111",
   },
+  cardTotalDone: {
+    color: GREEN_DARK,
+  },
   taskDone: {
     textDecorationLine: "line-through",
-    color: "#9CA3AF",
+    color: GREEN_DARK,
+  },
+
+  /* done badge (normal task) */
+  doneBadge: {
+    backgroundColor: "#DCFCE7",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 99,
+    borderWidth: 0.5,
+    borderColor: GREEN_BDR,
+  },
+  doneBadgeText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: GREEN_DARK,
   },
 
   /* ── PROGRESS ── */
@@ -293,10 +346,16 @@ const styles = StyleSheet.create({
     marginTop: 12,
     overflow: "hidden",
   },
+  progressTrackDone: {
+    backgroundColor: "#BBF7D0",
+  },
   progressFill: {
     height: 3,
     backgroundColor: GREEN,
     borderRadius: 99,
+  },
+  progressFillDone: {
+    backgroundColor: "#22C55E",
   },
 
   /* ── PREVIEW ── */
@@ -331,11 +390,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#9CA3AF",
   },
+  previewPriceDone: {
+    color: GREEN_MID,
+  },
   previewMore: {
     fontSize: 12,
     color: "#9CA3AF",
     marginTop: 2,
     marginLeft: 14,
+  },
+  previewMoreDone: {
+    color: GREEN_MID,
   },
 
   /* ── CHECKBOX ── */
@@ -349,8 +414,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   checkboxChecked: {
-    backgroundColor: PURPLE,
-    borderColor: PURPLE,
+    backgroundColor: "#22C55E",
+    borderColor: "#22C55E",
   },
   checkmark: {
     color: "white",
@@ -476,7 +541,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.5,
   },
 
-  /* ── CLOSE BUTTON ── */
+  /* ── CLOSE BTN ── */
   closeBtn: {
     backgroundColor: GREEN,
     padding: 14,

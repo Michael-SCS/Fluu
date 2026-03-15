@@ -15,7 +15,6 @@ import { useColorScheme } from "@/hooks/use-color-scheme";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { StatusBar } from "expo-status-bar";
 
 import * as NavigationBar from "expo-navigation-bar";
 
@@ -55,15 +54,6 @@ export default function TabLayout() {
   return (
 
     <>
-
-      {/* -------------------------------------------------- */}
-      {/* STATUS BAR SUPERIOR */}
-      {/* -------------------------------------------------- */}
-
-      <StatusBar
-        style={colorScheme === "dark" ? "light" : "dark"}
-        backgroundColor={theme.background}
-      />
 
       {/* -------------------------------------------------- */}
       {/* TAB NAVIGATION */}
