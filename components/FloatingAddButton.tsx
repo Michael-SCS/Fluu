@@ -11,9 +11,9 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MENU_ITEMS = [
-  { label: "New task",  icon: "checkmark-circle-outline", route: "/add-task"  },
-  { label: "New habit", icon: "repeat-outline",           route: "/add-habit" },
-  { label: "New focus", icon: "timer-outline",            route: "/add-focus" },
+  { label: "New task", icon: "checkmark-circle-outline", route: "/add-task" },
+  { label: "New habit", icon: "repeat-outline", route: "/add-habit" },
+  { label: "New focus", icon: "timer-outline", route: "/add-focus" },
 ];
 
 export default function FloatingAddButton() {
@@ -22,8 +22,8 @@ export default function FloatingAddButton() {
   const insets = useSafeAreaInsets();
 
   const rotateAnim = useRef(new Animated.Value(0)).current;
-  const itemAnims  = useRef(MENU_ITEMS.map(() => new Animated.Value(0))).current;
-  const fadeAnim   = useRef(new Animated.Value(0)).current;
+  const itemAnims = useRef(MENU_ITEMS.map(() => new Animated.Value(0))).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   function openMenu() {
     setOpen(true);
@@ -71,16 +71,21 @@ export default function FloatingAddButton() {
     <>
       {/* backdrop tenue */}
       {open && (
-        <Animated.View
-          style={[styles.backdrop, { opacity: fadeAnim }]}
-          pointerEvents="none"
-        />
+        <TouchableOpacity
+          style={StyleSheet.absoluteFill}
+          activeOpacity={1}
+          onPress={closeMenu}
+        >
+          <Animated.View
+            style={[styles.backdrop, { opacity: fadeAnim }]}
+          />
+        </TouchableOpacity>
       )}
 
       <View style={[styles.container, { bottom: insets.bottom + 24 }]}>
 
         {/* MENU ITEMS */}
-        {(open || itemAnims[0]) && (
+        {open && (
           <View style={styles.menu}>
             {MENU_ITEMS.map(({ label, icon, route }, i) => {
               const translateY = itemAnims[i].interpolate({
@@ -140,6 +145,8 @@ const styles = StyleSheet.create({
     position: "absolute",
     right: 24,
     alignItems: "flex-end",
+    zIndex: 999,
+    elevation: 10
   },
 
   /* ── MENU ── */

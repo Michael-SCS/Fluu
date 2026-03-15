@@ -1,4 +1,6 @@
+import AsyncStorage from "@react-native-async-storage/async-storage"
 import { create } from "zustand"
+import { createJSONStorage, persist } from "zustand/middleware"
 
 export type GroceryItem = {
 id:string
@@ -47,18 +49,32 @@ toggleItem:(taskId:string,itemId:string)=>void
 
 deleteTask:(id:string)=>void
 
+deleteTaskForToday:(id:string)=>void
+
 refreshDailyTasks:()=>void
 }
 
 function today(){
-return new Date().toISOString().split("T")[0]
+
+const d = new Date()
+
+const year = d.getFullYear()
+const month = String(d.getMonth()+1).padStart(2,"0")
+const day = String(d.getDate()).padStart(2,"0")
+
+return `${year}-${month}-${day}`
+
 }
 
 function weekday(){
 return new Date().getDay()
 }
 
-export const useTasksStore = create<TasksStore>((set,get)=>({
+export const useTasksStore = create<TasksStore>()(
+
+persist(
+
+(set,get)=>({
 
 tasks:[],
 
@@ -164,6 +180,26 @@ tasks:state.tasks.filter(t=>t.id!==id)
 
 },
 
+deleteTaskForToday:(id)=>{
+
+set(state=>({
+
+tasks:state.tasks.map(task=>{
+
+if(task.id!==id) return task
+
+return{
+...task,
+completed:true,
+lastCompleted:today()
+}
+
+})
+
+}))
+
+},
+
 refreshDailyTasks:()=>{
 
 const day=weekday()
@@ -188,4 +224,13 @@ return task
 
 }
 
-}))
+}),
+
+{
+name:"fluu-tasks-storage",
+storage:createJSONStorage(()=>AsyncStorage)
+}
+
+)
+
+)

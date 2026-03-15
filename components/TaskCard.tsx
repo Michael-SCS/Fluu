@@ -15,8 +15,8 @@ export default function TaskCard({ task }: any) {
   const toggleTask = useTasksStore((s) => s.toggleTask)
   const deleteTask = useTasksStore((s) => s.deleteTask)
   const toggleItem = useTasksStore((s) => s.toggleItem)
-
-  const [open, setOpen]       = useState(false)
+  const deleteTaskForToday = useTasksStore((s) => s.deleteTaskForToday)
+  const [open, setOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const slideAnim = useState(new Animated.Value(300))[0]
 
@@ -36,12 +36,12 @@ export default function TaskCard({ task }: any) {
   ========================= */
 
   if (task.type === "grocery") {
-    const total     = task.items?.reduce((s: number, i: any) => s + i.quantity * i.price, 0) ?? 0
-    const preview   = task.items?.slice(0, 3) ?? []
+    const total = task.items?.reduce((s: number, i: any) => s + i.quantity * i.price, 0) ?? 0
+    const preview = task.items?.slice(0, 3) ?? []
     const completed = task.items?.filter((i: any) => i.checked).length ?? 0
     const itemCount = task.items?.length ?? 0
-    const progress  = itemCount > 0 ? completed / itemCount : 0
-    const allDone   = itemCount > 0 && completed === itemCount
+    const progress = itemCount > 0 ? completed / itemCount : 0
+    const allDone = itemCount > 0 && completed === itemCount
 
     return (
       <TouchableOpacity
@@ -181,7 +181,23 @@ export default function TaskCard({ task }: any) {
                 style={styles.sheetButton}
                 onPress={() => { deleteTask(task.id); closeMenu() }}
               >
-                <Text style={[styles.sheetText, { color: "#E24B4A" }]}>Delete</Text>
+                <TouchableOpacity
+                  style={styles.sheetButton}
+                  onPress={() => { deleteTaskForToday(task.id); closeMenu() }}
+                >
+                  <Text style={styles.sheetText}>
+                    Delete today
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.sheetButton}
+                  onPress={() => { deleteTask(task.id); closeMenu() }}
+                >
+                  <Text style={[styles.sheetText, { color: "#E24B4A" }]}>
+                    Delete forever
+                  </Text>
+                </TouchableOpacity>
               </TouchableOpacity>
               <TouchableOpacity style={styles.sheetCancel} onPress={closeMenu}>
                 <Text style={styles.sheetCancelText}>Cancel</Text>
@@ -249,13 +265,13 @@ export default function TaskCard({ task }: any) {
   )
 }
 
-const PURPLE      = "#7F77DD"
+const PURPLE = "#7F77DD"
 const PURPLE_DARK = "#534AB7"
-const GREEN       = "#1D9E75"
-const GREEN_BG    = "#F0FDF4"
-const GREEN_BDR   = "#86EFAC"
-const GREEN_DARK  = "#166534"
-const GREEN_MID   = "#4ADE80"
+const GREEN = "#1D9E75"
+const GREEN_BG = "#F0FDF4"
+const GREEN_BDR = "#86EFAC"
+const GREEN_DARK = "#166534"
+const GREEN_MID = "#4ADE80"
 
 const styles = StyleSheet.create({
   /* ── CARD ── */

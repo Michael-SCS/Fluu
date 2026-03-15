@@ -12,9 +12,9 @@ import { focusTemplates } from "@/data/focusTemplates";
 import { useFocusStore } from "@/store/focusStore";
 
 export default function AddFocusScreen() {
-  const router       = useRouter();
-  const insets       = useSafeAreaInsets();
-  const addActivity  = useFocusStore((s) => s.addActivity);
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const addActivity = useFocusStore((s) => s.addActivity);
 
   function calculateTotal(duration: number, breakTime: number, sessions: number) {
     return duration * sessions + breakTime * (sessions - 1);
@@ -27,6 +27,7 @@ export default function AddFocusScreen() {
   }
 
   function selectTemplate(template: any) {
+
     addActivity({
       id: Date.now().toString(),
       title: template.title,
@@ -34,9 +35,11 @@ export default function AddFocusScreen() {
       duration: template.duration,
       breakTime: template.breakTime,
       sessions: template.sessions,
-      usageCount: 0,
-    });
-    router.back();
+      usageCount: 0
+    })
+
+    router.back()
+
   }
 
   return (
@@ -124,7 +127,7 @@ export default function AddFocusScreen() {
   );
 }
 
-const PURPLE      = "#7F77DD";
+const PURPLE = "#7F77DD";
 const PURPLE_SOFT = "#EEEDFE";
 const PURPLE_DARK = "#534AB7";
 

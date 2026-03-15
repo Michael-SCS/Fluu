@@ -25,8 +25,8 @@ usageCount
 
 const router = useRouter()
 
-const increaseUsage =
-useFocusStore(state=>state.increaseUsage)
+const deleteActivity =
+useFocusStore(state=>state.deleteActivity)
 
 
 
@@ -62,9 +62,15 @@ return `${mins}m`
 
 function startFocus(){
 
-increaseUsage(id)
-
 router.push(`/focus-timer?id=${id}`)
+
+}
+
+
+
+function removeFocus(){
+
+deleteActivity(id)
 
 }
 
@@ -76,8 +82,9 @@ const total = calculateTotal()
 
 return(
 
+<View style={styles.card}>
+
 <TouchableOpacity
-style={styles.card}
 onPress={startFocus}
 activeOpacity={0.8}
 >
@@ -122,7 +129,26 @@ Total {formatMinutes(total)}
 </Text>
 </View>
 
+<View style={styles.usageRow}>
+<Text style={styles.usageText}>
+🔥 {usageCount} sessions completed
+</Text>
+</View>
+
 </TouchableOpacity>
+
+
+
+<TouchableOpacity
+onPress={removeFocus}
+style={styles.deleteBtn}
+>
+<Text style={styles.deleteText}>
+Delete
+</Text>
+</TouchableOpacity>
+
+</View>
 
 )
 
@@ -183,6 +209,25 @@ marginRight:6
 totalText:{
 fontWeight:"600",
 color:"#6366F1"
+},
+
+usageRow:{
+marginTop:6
+},
+
+usageText:{
+fontSize:12,
+color:"#888"
+},
+
+deleteBtn:{
+marginTop:10
+},
+
+deleteText:{
+fontSize:12,
+color:"#EF4444",
+fontWeight:"600"
 }
 
 })

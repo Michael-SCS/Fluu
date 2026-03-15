@@ -1,295 +1,152 @@
-import { useEffect, useState } from "react"
 import {
   FlatList,
-  ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View
 } from "react-native"
 
 import { useTasksStore } from "@/store/tasksStore"
-import { getSuggestedTasks } from "@/utils/getSuggestedTasks"
-
-import { useRouter } from "expo-router"
 import TaskCard from "./TaskCard"
 
-export default function TasksSection(){
+export default function TasksSection() {
 
-const router = useRouter()
+  const allTasks = useTasksStore(state => state.tasks)
 
-const tasks = useTasksStore(state=>state.tasks)
-const addTask = useTasksStore(state=>state.addTask)
+  const today = new Date().toISOString().split("T")[0]
+  const todayDate = new Date()
 
-const [suggested,setSuggested] = useState<any[]>([])
-const [openSuggestions,setOpenSuggestions] = useState(false)
-const [selectedTemplate,setSelectedTemplate] = useState<any>(null)
+  const day = new Date(
+    todayDate.getFullYear(),
+    todayDate.getMonth(),
+    todayDate.getDate()
+  ).getDay()
 
-useEffect(()=>{
+  /* TASKS FOR TODAY */
 
-if(tasks.length===0){
-setSuggested([])
-setOpenSuggestions(false)
-setSelectedTemplate(null)
-}
+  const tasks = allTasks.filter(task => {
 
-},[tasks])
+    if (task.repeatType === "daily") return true
 
-function toggleSuggestions(){
+    if (task.repeatType === "weekly") {
+      return task.repeatDays?.includes(day)
+    }
 
-if(openSuggestions){
+    if (task.repeatType === "none") {
+      return task.createdAt === today
+    }
 
-setOpenSuggestions(false)
-setSelectedTemplate(null)
+    return true
 
-}else{
+  })
 
-const result = getSuggestedTasks(tasks)
+  /* SPLIT */
 
-setSuggested(result)
-setOpenSuggestions(true)
+  const pending = tasks.filter(t => !t.completed)
+  const completed = tasks.filter(t => t.completed)
 
-}
+  return (
 
-}
+    <View style={{ flex: 1 }}>
 
-function createTask(template:any){
+      {/* EMPTY STATE */}
 
-addTask(
-template.title,
-template.description,
-template.category
-)
+      {tasks.length === 0 && (
 
-setOpenSuggestions(false)
-setSelectedTemplate(null)
+        <View style={styles.header}>
 
-}
+          <Text style={styles.title}>
+            No tasks today
+          </Text>
 
-const sortedTasks=[
+          <Text style={styles.description}>
+            Tap the + button below to create a task
+          </Text>
 
-...tasks.filter(t=>!t.completed),
-...tasks.filter(t=>t.completed)
+        </View>
 
-]
+      )}
 
-return(
+      {/* PENDING TASKS */}
 
-<View style={{flex:1}}>
+      {pending.length > 0 && (
 
-{/* EMPTY STATE */}
+        <>
 
-{tasks.length===0 &&(
+          <Text style={styles.section}>
+            Today
+          </Text>
 
-<View style={styles.header}>
+          <FlatList
+            data={pending}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TaskCard task={item} />
+            )}
+            scrollEnabled={false}
+          />
 
-<Text style={styles.title}>
-No tasks yet
-</Text>
+        </>
 
-<Text style={styles.description}>
-Stay organized and productive
-</Text>
+      )}
 
-<TouchableOpacity
-style={styles.button}
-onPress={toggleSuggestions}
->
+      {/* COMPLETED TASKS */}
 
-<Text style={styles.buttonText}>
-Suggest some tasks
-</Text>
+      {completed.length > 0 && (
 
-</TouchableOpacity>
+        <>
 
-</View>
+          <Text style={styles.section}>
+            Completed
+          </Text>
 
-)}
+          <FlatList
+            data={completed}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TaskCard task={item} />
+            )}
+            scrollEnabled={false}
+          />
 
-{/* SUGGESTIONS */}
+        </>
 
-{openSuggestions &&(
+      )}
 
-<ScrollView
-style={{maxHeight:350}}
-contentContainerStyle={styles.dropdownContent}
-showsVerticalScrollIndicator={false}
->
+    </View>
 
-{suggested.map((task)=>{
-
-const isOpen = selectedTemplate?.id===task.id
-const isGrocery = task.title.includes("Grocery")
-
-return(
-
-<View key={task.id} style={styles.card}>
-
-<TouchableOpacity
-onPress={()=>{
-
-if(isOpen){
-setSelectedTemplate(null)
-}else{
-setSelectedTemplate(task)
-}
-
-}}
->
-
-<Text style={styles.cardTitle}>
-{task.title}
-</Text>
-
-<Text style={styles.cardDesc}>
-{task.description}
-</Text>
-
-</TouchableOpacity>
-
-{/* EXPAND */}
-
-{isOpen &&(
-
-isGrocery
-
-? (
-
-<TouchableOpacity
-style={styles.personalize}
-onPress={()=>router.push("/grocery-builder")}
->
-
-<Text style={styles.personalizeText}>
-Personalize
-</Text>
-
-</TouchableOpacity>
-
-)
-
-: (
-
-<TouchableOpacity
-style={styles.add}
-onPress={()=>createTask(task)}
->
-
-<Text style={{color:"white"}}>
-Add Task
-</Text>
-
-</TouchableOpacity>
-
-)
-
-)}
-
-</View>
-
-)
-
-})}
-
-</ScrollView>
-
-)}
-
-{/* TASK LIST */}
-
-<FlatList
-data={sortedTasks}
-keyExtractor={(item)=>item.id}
-renderItem={({item})=>(
-<TaskCard task={item}/>
-)}
-contentContainerStyle={styles.list}
-showsVerticalScrollIndicator={false}
-/>
-
-</View>
-
-)
+  )
 
 }
 
 const styles = StyleSheet.create({
 
-header:{
-alignItems:"center",
-paddingTop:60,
-paddingBottom:20
-},
+  header: {
+    alignItems: "center",
+    paddingTop: 60,
+    paddingBottom: 20
+  },
 
-title:{
-fontSize:22,
-fontWeight:"700",
-marginBottom:6
-},
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 6
+  },
 
-description:{
-fontSize:14,
-color:"#777",
-marginBottom:14
-},
+  description: {
+    fontSize: 14,
+    color: "#777",
+    marginBottom: 14
+  },
 
-button:{
-backgroundColor:"#6366F1",
-paddingVertical:10,
-paddingHorizontal:18,
-borderRadius:10
-},
-
-buttonText:{
-color:"white",
-fontWeight:"600"
-},
-
-dropdownContent:{
-paddingHorizontal:20,
-paddingBottom:20
-},
-
-card:{
-backgroundColor:"white",
-padding:14,
-borderRadius:12,
-marginBottom:10
-},
-
-cardTitle:{
-fontWeight:"600"
-},
-
-cardDesc:{
-fontSize:13,
-color:"#777",
-marginTop:4
-},
-
-add:{
-backgroundColor:"#2563EB",
-padding:12,
-borderRadius:10,
-marginTop:10,
-alignItems:"center"
-},
-
-personalize:{
-backgroundColor:"#7C3AED",
-padding:12,
-borderRadius:10,
-marginTop:10,
-alignItems:"center"
-},
-
-personalizeText:{
-color:"#fff",
-fontWeight:"700"
-},
-
-list:{
-paddingBottom:120
-}
+  section: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#888",
+    marginLeft: 20,
+    marginTop: 16,
+    marginBottom: 8,
+    textTransform: "uppercase",
+    letterSpacing: 1
+  }
 
 })
