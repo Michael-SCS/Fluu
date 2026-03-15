@@ -1,6 +1,7 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   FlatList,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -9,6 +10,7 @@ import {
 
 import { useTasksStore } from "@/store/tasksStore"
 import { getSuggestedTasks } from "@/utils/getSuggestedTasks"
+
 import { useRouter } from "expo-router"
 import TaskCard from "./TaskCard"
 
@@ -20,20 +22,34 @@ const tasks = useTasksStore(state=>state.tasks)
 const addTask = useTasksStore(state=>state.addTask)
 
 const [suggested,setSuggested] = useState<any[]>([])
-const [open,setOpen] = useState(false)
+const [openSuggestions,setOpenSuggestions] = useState(false)
 const [selectedTemplate,setSelectedTemplate] = useState<any>(null)
+
+useEffect(()=>{
+
+if(tasks.length===0){
+setSuggested([])
+setOpenSuggestions(false)
+setSelectedTemplate(null)
+}
+
+},[tasks])
 
 function toggleSuggestions(){
 
-if(open){
-setOpen(false)
+if(openSuggestions){
+
+setOpenSuggestions(false)
 setSelectedTemplate(null)
-return
-}
+
+}else{
 
 const result = getSuggestedTasks(tasks)
+
 setSuggested(result)
-setOpen(true)
+setOpenSuggestions(true)
+
+}
 
 }
 
@@ -45,14 +61,16 @@ template.description,
 template.category
 )
 
-setOpen(false)
+setOpenSuggestions(false)
 setSelectedTemplate(null)
 
 }
 
 const sortedTasks=[
+
 ...tasks.filter(t=>!t.completed),
 ...tasks.filter(t=>t.completed)
+
 ]
 
 return(
@@ -88,11 +106,15 @@ Suggest some tasks
 
 )}
 
-{/* SUGGESTED TASKS */}
+{/* SUGGESTIONS */}
 
-{open &&(
+{openSuggestions &&(
 
-<View style={styles.dropdownContent}>
+<ScrollView
+style={{maxHeight:350}}
+contentContainerStyle={styles.dropdownContent}
+showsVerticalScrollIndicator={false}
+>
 
 {suggested.map((task)=>{
 
@@ -125,9 +147,9 @@ setSelectedTemplate(task)
 
 </TouchableOpacity>
 
-{/* EXPANDED SECTION */}
+{/* EXPAND */}
 
-{isOpen && (
+{isOpen &&(
 
 isGrocery
 
@@ -135,7 +157,7 @@ isGrocery
 
 <TouchableOpacity
 style={styles.personalize}
-onPress={()=>router.push("/add-task")}
+onPress={()=>router.push("/grocery-builder")}
 >
 
 <Text style={styles.personalizeText}>
@@ -169,7 +191,7 @@ Add Task
 
 })}
 
-</View>
+</ScrollView>
 
 )}
 
@@ -182,6 +204,7 @@ renderItem={({item})=>(
 <TaskCard task={item}/>
 )}
 contentContainerStyle={styles.list}
+showsVerticalScrollIndicator={false}
 />
 
 </View>
@@ -223,13 +246,14 @@ fontWeight:"600"
 },
 
 dropdownContent:{
-paddingHorizontal:20
+paddingHorizontal:20,
+paddingBottom:20
 },
 
 card:{
 backgroundColor:"white",
 padding:14,
-borderRadius:10,
+borderRadius:12,
 marginBottom:10
 },
 

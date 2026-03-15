@@ -2,9 +2,14 @@ import FloatingAddButton from "@/components/FloatingAddButton";
 import FocusSection from "@/components/FocusSection";
 import HabitsSection from "@/components/HabitsSection";
 import TasksSection from "@/components/TasksSection";
+
 import { useHabitStore } from "@/store/habitStore";
+import { useTasksStore } from "@/store/tasksStore";
+
 import { StatusBar } from "expo-status-bar";
+
 import { useEffect, useRef, useState } from "react";
+
 import {
   Animated,
   Platform,
@@ -14,6 +19,7 @@ import {
   TouchableOpacity,
   View
 } from "react-native";
+
 import PagerView from "react-native-pager-view";
 
 const today = new Date();
@@ -31,15 +37,26 @@ export default function Index(){
 
 const pagerRef = useRef<PagerView>(null)
 
-const [page,setPage] = useState(1)
+const [page,setPage] = useState(0)
 
-const indicatorAnim = useRef(new Animated.Value(1)).current
+const indicatorAnim = useRef(new Animated.Value(0)).current
 
 const resetDailyProgress =
 useHabitStore(state=>state.resetDailyProgress)
 
+const refreshDailyTasks =
+useTasksStore(state=>state.refreshDailyTasks)
+
 useEffect(()=>{
+
+/* reset habits */
+
 resetDailyProgress()
+
+/* refresh repeat tasks */
+
+refreshDailyTasks()
+
 },[])
 
 function goToPage(index:number){
@@ -81,8 +98,13 @@ return(
 
 <View style={styles.container}>
 
+{/* ANDROID STATUS BAR SPACE */}
+
 <View style={styles.statusBar}/>
+
 <StatusBar style="dark" backgroundColor="#F8F8F6"/>
+
+{/* HEADER */}
 
 <View style={styles.headerContainer}>
 
@@ -99,6 +121,8 @@ Today
 </Text>
 
 </View>
+
+{/* TABS */}
 
 <View style={styles.tabsWrapper}>
 
@@ -148,10 +172,12 @@ isActive && styles.activeText
 
 </View>
 
+{/* CONTENT */}
+
 <PagerView
 ref={pagerRef}
 style={styles.pager}
-initialPage={1}
+initialPage={0}
 onPageSelected={onPageSelected}
 >
 
@@ -176,9 +202,15 @@ flex:1,
 backgroundColor:"#F8F8F6"
 },
 
+/* STATUS BAR SPACE */
+
 statusBar:{
-height:Platform.OS==="android" ? RNStatusBar.currentHeight : 0
+height:Platform.OS==="android"
+? RNStatusBar.currentHeight
+:0
 },
+
+/* HEADER */
 
 headerContainer:{
 paddingHorizontal:28,
@@ -207,6 +239,8 @@ fontSize:14,
 color:"#8A8A8F",
 fontWeight:"500"
 },
+
+/* TABS */
 
 tabsWrapper:{
 paddingHorizontal:20,
@@ -260,6 +294,8 @@ color:"#9CA3AF"
 activeText:{
 color:"#0F0F14"
 },
+
+/* PAGER */
 
 pager:{
 flex:1

@@ -14,17 +14,17 @@ title:string
 description:string
 category:string
 
-completed:boolean
+type:"normal"|"grocery"
 
 repeatType?:"none"|"daily"|"weekly"
 repeatDays?:number[]
 
-type?:"normal"|"grocery"
+completed:boolean
+
+createdAt:string
+lastCompleted?:string
 
 items?:GroceryItem[]
-
-createdDate:string
-lastCompletedDate?:string
 }
 
 type TasksStore = {
@@ -43,17 +43,19 @@ addGroceryTask:(items:GroceryItem[])=>void
 
 toggleTask:(id:string)=>void
 
-deleteTask:(id:string)=>void
-
 toggleItem:(taskId:string,itemId:string)=>void
+
+deleteTask:(id:string)=>void
 
 refreshDailyTasks:()=>void
 }
 
 function today(){
-
 return new Date().toISOString().split("T")[0]
+}
 
+function weekday(){
+return new Date().getDay()
 }
 
 export const useTasksStore = create<TasksStore>((set,get)=>({
@@ -62,79 +64,52 @@ tasks:[],
 
 addTask:(title,description,category,repeatType="none",repeatDays=[])=>{
 
-const state = get()
+const state=get()
 
 const exists = state.tasks.some(t=>
-
-t.title===title &&
-t.createdDate===today()
-
+t.title===title && t.createdAt===today()
 )
 
 if(exists) return
 
 set({
-
 tasks:[
-
 ...state.tasks,
-
 {
 id:Date.now().toString(),
-
 title,
 description,
 category,
-
-completed:false,
-
+type:"normal",
 repeatType,
 repeatDays,
-
-type:"normal",
-
-createdDate:today()
-
+completed:false,
+createdAt:today()
 }
-
 ]
-
 })
 
 },
 
 addGroceryTask:(items)=>{
 
-const state = get()
-
-set({
+set(state=>({
 
 tasks:[
-
 ...state.tasks,
-
 {
 id:Date.now().toString(),
-
 title:"🛒 Grocery List",
-
 description:"",
-
 category:"Daily life",
-
-completed:false,
-
 type:"grocery",
-
-items,
-
-createdDate:today()
-
+completed:false,
+createdAt:today(),
+items
 }
-
 ]
 
-})
+}))
 
 },
 
@@ -142,33 +117,17 @@ toggleTask:(id)=>{
 
 set(state=>({
 
-tasks:state.tasks.map(task=>{
+tasks:state.tasks.map(t=>{
 
-if(task.id!==id) return task
-
-const completed = !task.completed
+if(t.id!==id) return t
 
 return{
-
-...task,
-
-completed,
-
-lastCompletedDate:completed ? today() : undefined
-
+...t,
+completed:!t.completed,
+lastCompleted:today()
 }
 
 })
-
-}))
-
-},
-
-deleteTask:(id)=>{
-
-set(state=>({
-
-tasks:state.tasks.filter(t=>t.id!==id)
 
 }))
 
@@ -183,19 +142,12 @@ tasks:state.tasks.map(task=>{
 if(task.id!==taskId) return task
 
 return{
-
 ...task,
-
-items:task.items?.map(item=>
-
-item.id!==itemId
-
-? item
-
-: {...item,checked:!item.checked}
-
+items:task.items?.map(i=>
+i.id===itemId
+? {...i,checked:!i.checked}
+:i
 )
-
 }
 
 })
@@ -204,36 +156,28 @@ item.id!==itemId
 
 },
 
+deleteTask:(id)=>{
+
+set(state=>({
+tasks:state.tasks.filter(t=>t.id!==id)
+}))
+
+},
+
 refreshDailyTasks:()=>{
 
-const day = new Date().getDay()
+const day=weekday()
 
 set(state=>({
 
 tasks:state.tasks.map(task=>{
 
 if(task.repeatType==="daily"){
-
-return{
-
-...task,
-
-completed:false
-
-}
-
+return {...task,completed:false}
 }
 
 if(task.repeatType==="weekly" && task.repeatDays?.includes(day)){
-
-return{
-
-...task,
-
-completed:false
-
-}
-
+return {...task,completed:false}
 }
 
 return task
