@@ -1,87 +1,110 @@
-import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native"
 
-import { taskTemplates } from "@/data/taskTemplates";
-import { useTasksStore } from "@/store/tasksStore";
+import { favoriteTasks } from "@/data/favoriteTasks"
+import { useTasksStore } from "@/store/tasksStore"
 
-import CreateGroceryModal from "./CreateGroceryModal";
 
-export default function FavoriteTasksDropdown() {
 
-  const addTaskFromTemplate = useTasksStore(
-    (state) => state.addTaskFromTemplate
-  );
+type Props = {
+  hideTitle?: boolean
+}
 
-  const [groceryModal, setGroceryModal] = useState(false);
 
-  const handlePress = (title: string) => {
 
-    if (title === "Grocery List") {
+type FavoriteTask = {
+  id: string
+  title: string
+  description: string
+  category: string
+}
 
-      setGroceryModal(true);
 
-      return;
-    }
 
-    addTaskFromTemplate(title);
-  };
+export default function FavoriteTasksDropdown({ hideTitle }: Props){
 
-  return (
+  const addTask =
+  useTasksStore(state => state.addTask)
+
+
+
+  function createTask(template: FavoriteTask){
+
+    addTask(
+      template.title,
+      template.description,
+      template.category
+    )
+
+  }
+
+
+
+  return(
 
     <View style={styles.container}>
 
-      <Text style={styles.title}>
-        Our Favorites
-      </Text>
+      {!hideTitle && (
+        <Text style={styles.title}>
+          Recommended tasks
+        </Text>
+      )}
 
-      {taskTemplates.map((task) => (
+      {favoriteTasks.map((task: FavoriteTask) => (
 
         <TouchableOpacity
           key={task.id}
-          style={styles.item}
-          onPress={() => handlePress(task.title)}
+          style={styles.card}
+          onPress={() => createTask(task)}
         >
 
-          <Text style={styles.itemText}>
+          <Text style={styles.name}>
             {task.title}
+          </Text>
+
+          <Text style={styles.description}>
+            {task.description}
           </Text>
 
         </TouchableOpacity>
 
       ))}
 
-      <CreateGroceryModal
-        visible={groceryModal}
-        onClose={() => setGroceryModal(false)}
-      />
-
     </View>
 
-  );
+  )
+
 }
+
+
 
 const styles = StyleSheet.create({
 
-  container: {
-    marginHorizontal: 20,
-    marginBottom: 10,
-  },
+container:{
+paddingHorizontal:20
+},
 
-  title: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 10,
-  },
+title:{
+fontSize:16,
+fontWeight:"600",
+marginBottom:10
+},
 
-  item: {
-    backgroundColor: "white",
-    padding: 12,
-    borderRadius: 10,
-    marginBottom: 8,
-  },
+card:{
+backgroundColor:"white",
+padding:14,
+borderRadius:10,
+marginBottom:10
+},
 
-  itemText: {
-    fontSize: 15,
-  },
+name:{
+fontSize:14,
+fontWeight:"600"
+},
 
-});
+description:{
+fontSize:12,
+color:"#777",
+marginTop:4
+}
+
+})
