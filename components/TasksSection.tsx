@@ -1,47 +1,90 @@
 import { useEffect, useState } from "react"
-
 import {
   FlatList,
+  Modal,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View
 } from "react-native"
 
 import { useTasksStore } from "@/store/tasksStore"
-
 import { getSuggestedTasks } from "@/utils/getSuggestedTasks"
 
 import TaskCard from "./TaskCard"
-
-
 
 export default function TasksSection(){
 
 const tasks = useTasksStore(state=>state.tasks)
 const addTask = useTasksStore(state=>state.addTask)
+const addGroceryTask = useTasksStore(state=>state.addGroceryTask)
 
 const [suggested,setSuggested] = useState<any[]>([])
-const [open,setOpen] = useState(false)
 const [requested,setRequested] = useState(false)
 
+/* expanded template */
 
+const [openTemplate,setOpenTemplate] = useState<string|null>(null)
 
-/* 🔹 Resetear sugerencias si no hay tasks */
+/* repeat config */
 
-useEffect(()=>{
+const [repeatType,setRepeatType] =
+useState<"none"|"daily"|"weekly">("none")
 
-if(tasks.length === 0){
+const [repeatDays,setRepeatDays] = useState<number[]>([])
 
-setRequested(false)
-setSuggested([])
-setOpen(false)
+/* grocery modal */
+
+const [groceryOpen,setGroceryOpen] = useState(false)
+
+const [product,setProduct] = useState("")
+const [quantity,setQuantity] = useState("")
+const [price,setPrice] = useState("")
+
+const [items,setItems] = useState<any[]>([])
+
+function toggleDay(day:number){
+
+if(repeatDays.includes(day)){
+setRepeatDays(repeatDays.filter(d=>d!==day))
+}else{
+setRepeatDays([...repeatDays,day])
+}
 
 }
 
-},[tasks])
+function openTemplateCard(template:any){
 
+if(template.title.includes("Grocery")){
+setOpenTemplate(template.id)
+return
+}
 
+setOpenTemplate(template.id)
+setRepeatType("none")
+setRepeatDays([])
+
+}
+
+function createTask(template:any){
+
+addTask(
+template.title,
+template.description,
+template.category,
+repeatType,
+repeatDays
+)
+
+setOpenTemplate(null)
+
+/* cerrar sugerencias después de crear */
+
+setRequested(false)
+setSuggested([])
+
+}
 
 function suggestTasks(){
 
@@ -49,39 +92,56 @@ const result = getSuggestedTasks(tasks)
 
 setSuggested(result)
 setRequested(true)
-setOpen(true)
 
 }
 
+function addItem(){
 
+if(!product) return
 
-function toggleDropdown(){
+setItems([
+...items,
+{
+id:Date.now().toString(),
+name:product,
+quantity:Number(quantity)||1,
+price:Number(price)||0,
+checked:false
+}
+])
 
-setOpen(!open)
+setProduct("")
+setQuantity("")
+setPrice("")
 
 }
 
+function saveGrocery(){
 
+if(items.length===0) return
 
-function createTask(template:any){
+addGroceryTask(items)
 
-addTask(
-template.title,
-template.description,
-template.category
-)
+setItems([])
+setGroceryOpen(false)
 
-/* cerrar dropdown después de crear */
+/* cerrar sugerencias */
 
-setOpen(false)
+setRequested(false)
+setSuggested([])
 
 }
 
+useEffect(()=>{
 
+if(tasks.length===0){
+setRequested(false)
+setSuggested([])
+}
 
-/* 🔹 ordenar completadas abajo */
+},[tasks])
 
-const sortedTasks = [
+const sortedTasks=[
 
 ...tasks.filter(t=>!t.completed),
 
@@ -89,17 +149,11 @@ const sortedTasks = [
 
 ]
 
-
-
 return(
 
 <View style={{flex:1}}>
 
-
-
-{/* EMPTY STATE */}
-
-{tasks.length === 0 && (
+{tasks.length===0 &&(
 
 <View style={styles.header}>
 
@@ -126,109 +180,236 @@ Suggest some tasks
 
 )}
 
+{requested && suggested.length>0 &&(
 
+<View style={styles.suggestions}>
 
-{/* SUGGESTED LIST CUANDO NO HAY TASKS */}
+{suggested.map(template=>{
 
-{tasks.length === 0 && requested && suggested.length > 0 && (
+const isOpen = openTemplate===template.id
 
-<View style={styles.dropdownContent}>
+return(
 
-{suggested.map(task => (
+<View key={template.id} style={styles.card}>
 
 <TouchableOpacity
-key={task.id}
-style={styles.card}
-onPress={()=>createTask(task)}
+onPress={()=>openTemplateCard(template)}
 >
 
 <Text style={styles.cardTitle}>
-{task.title}
+{template.title}
 </Text>
 
 <Text style={styles.cardDesc}>
-{task.description}
+{template.description}
 </Text>
 
 </TouchableOpacity>
 
-))}
+{isOpen &&(
 
-</View>
+template.title.includes("Grocery")
 
-)}
+? (
 
-
-
-{/* DROPDOWN CUANDO YA HAY TASKS */}
-
-{tasks.length > 0 && requested && suggested.length > 0 && (
-
-<View style={styles.dropdown}>
+<View style={styles.expand}>
 
 <TouchableOpacity
-style={styles.dropdownHeader}
-onPress={toggleDropdown}
+style={styles.personalize}
+onPress={()=>setGroceryOpen(true)}
 >
 
-<Text style={styles.dropdownTitle}>
-Suggested for you
-</Text>
-
-<Text style={styles.arrow}>
-{open ? "▲" : "▼"}
+<Text style={styles.personalizeText}>
+Personalize Grocery List
 </Text>
 
 </TouchableOpacity>
 
+</View>
 
+)
 
-{open && (
+: (
 
-<View style={styles.dropdownContent}>
+<View style={styles.expand}>
 
-{suggested.map(task => (
+<Text style={styles.label}>
+Repeat
+</Text>
+
+<View style={styles.row}>
 
 <TouchableOpacity
-key={task.id}
-style={styles.card}
-onPress={()=>createTask(task)}
+style={[styles.btn,repeatType==="none"&&styles.active]}
+onPress={()=>setRepeatType("none")}
+>
+<Text>Once</Text>
+</TouchableOpacity>
+
+<TouchableOpacity
+style={[styles.btn,repeatType==="daily"&&styles.active]}
+onPress={()=>setRepeatType("daily")}
+>
+<Text>Daily</Text>
+</TouchableOpacity>
+
+<TouchableOpacity
+style={[styles.btn,repeatType==="weekly"&&styles.active]}
+onPress={()=>setRepeatType("weekly")}
+>
+<Text>Specific days</Text>
+</TouchableOpacity>
+
+</View>
+
+{repeatType==="weekly" &&(
+
+<View style={styles.days}>
+
+{["S","M","T","W","T","F","S"].map((d,i)=>{
+
+const active = repeatDays.includes(i)
+
+return(
+
+<TouchableOpacity
+key={i}
+style={[styles.day,active&&styles.dayActive]}
+onPress={()=>toggleDay(i)}
 >
 
-<Text style={styles.cardTitle}>
-{task.title}
-</Text>
-
-<Text style={styles.cardDesc}>
-{task.description}
+<Text style={active&&{color:"#fff"}}>
+{d}
 </Text>
 
 </TouchableOpacity>
 
-))}
+)
+
+})}
 
 </View>
 
 )}
 
+<TouchableOpacity
+style={styles.add}
+onPress={()=>createTask(template)}
+>
+
+<Text style={{color:"white"}}>
+Add Task
+</Text>
+
+</TouchableOpacity>
+
 </View>
+
+)
 
 )}
 
+</View>
 
+)
 
-{/* USER TASKS */}
+})}
+
+</View>
+
+)}
 
 <FlatList
 data={sortedTasks}
-keyExtractor={(item)=>item.id}
-renderItem={({item})=>(
-<TaskCard task={item}/>
-)}
+keyExtractor={item=>item.id}
+renderItem={({item})=>(<TaskCard task={item}/>)}
 contentContainerStyle={styles.list}
 />
 
+<Modal
+visible={groceryOpen}
+animationType="slide"
+transparent
+>
 
+<View style={styles.modalBg}>
+
+<View style={styles.modal}>
+
+<Text style={styles.modalTitle}>
+Grocery List
+</Text>
+
+<TextInput
+placeholder="Product"
+value={product}
+onChangeText={setProduct}
+style={styles.input}
+/>
+
+<TextInput
+placeholder="Quantity"
+value={quantity}
+onChangeText={setQuantity}
+keyboardType="numeric"
+style={styles.input}
+/>
+
+<TextInput
+placeholder="Price"
+value={price}
+onChangeText={setPrice}
+keyboardType="numeric"
+style={styles.input}
+/>
+
+<TouchableOpacity
+style={styles.addItem}
+onPress={addItem}
+>
+
+<Text style={{color:"white"}}>
+Add product
+</Text>
+
+</TouchableOpacity>
+
+{items.map(i=>(
+
+<View key={i.id} style={styles.itemRow}>
+
+<Text style={{flex:1}}>
+{i.name}
+</Text>
+
+<Text>
+{i.quantity}
+</Text>
+
+<Text>
+${i.price}
+</Text>
+
+</View>
+
+))}
+
+<TouchableOpacity
+style={styles.save}
+onPress={saveGrocery}
+>
+
+<Text style={{color:"white"}}>
+Save Grocery List
+</Text>
+
+</TouchableOpacity>
+
+</View>
+
+</View>
+
+</Modal>
 
 </View>
 
@@ -236,32 +417,26 @@ contentContainerStyle={styles.list}
 
 }
 
-
-
-const styles = StyleSheet.create({
+const styles=StyleSheet.create({
 
 header:{
 alignItems:"center",
-paddingTop:60,
-paddingBottom:20
+paddingTop:60
 },
 
 title:{
 fontSize:22,
-fontWeight:"700",
-marginBottom:6
+fontWeight:"700"
 },
 
 description:{
-fontSize:14,
 color:"#777",
 marginBottom:14
 },
 
 button:{
 backgroundColor:"#6366F1",
-paddingVertical:10,
-paddingHorizontal:18,
+padding:10,
 borderRadius:10
 },
 
@@ -270,37 +445,14 @@ color:"white",
 fontWeight:"600"
 },
 
-dropdown:{
-paddingHorizontal:20,
-marginBottom:10
-},
-
-dropdownHeader:{
-flexDirection:"row",
-justifyContent:"space-between",
-alignItems:"center",
-marginBottom:8
-},
-
-dropdownTitle:{
-fontSize:16,
-fontWeight:"600"
-},
-
-arrow:{
-fontSize:12,
-color:"#777"
-},
-
-dropdownContent:{
-paddingHorizontal:20,
-marginTop:6
+suggestions:{
+paddingHorizontal:20
 },
 
 card:{
 backgroundColor:"white",
 padding:14,
-borderRadius:10,
+borderRadius:12,
 marginBottom:10
 },
 
@@ -314,8 +466,118 @@ color:"#777",
 marginTop:4
 },
 
+expand:{
+marginTop:10
+},
+
+label:{
+fontWeight:"600",
+marginBottom:6
+},
+
+row:{
+flexDirection:"row",
+gap:8
+},
+
+btn:{
+backgroundColor:"#eee",
+padding:10,
+borderRadius:20
+},
+
+active:{
+backgroundColor:"#2563EB"
+},
+
+days:{
+flexDirection:"row",
+gap:6,
+marginTop:8
+},
+
+day:{
+padding:8,
+backgroundColor:"#eee",
+borderRadius:8
+},
+
+dayActive:{
+backgroundColor:"#2563EB"
+},
+
+add:{
+backgroundColor:"#2563EB",
+padding:12,
+borderRadius:10,
+marginTop:10,
+alignItems:"center"
+},
+
+personalize:{
+backgroundColor:"#2563EB",
+padding:14,
+borderRadius:12,
+marginTop:10,
+alignItems:"center"
+},
+
+personalizeText:{
+color:"#fff",
+fontWeight:"700"
+},
+
 list:{
 paddingBottom:120
+},
+
+modalBg:{
+flex:1,
+backgroundColor:"rgba(0,0,0,0.4)",
+justifyContent:"center",
+padding:20
+},
+
+modal:{
+backgroundColor:"white",
+padding:20,
+borderRadius:16
+},
+
+modalTitle:{
+fontSize:20,
+fontWeight:"700",
+marginBottom:10
+},
+
+input:{
+borderWidth:1,
+borderColor:"#ddd",
+padding:10,
+borderRadius:10,
+marginTop:8
+},
+
+addItem:{
+backgroundColor:"#2563EB",
+padding:10,
+borderRadius:10,
+marginTop:10,
+alignItems:"center"
+},
+
+itemRow:{
+flexDirection:"row",
+justifyContent:"space-between",
+marginTop:6
+},
+
+save:{
+backgroundColor:"#16A34A",
+padding:12,
+borderRadius:10,
+marginTop:12,
+alignItems:"center"
 }
 
 })

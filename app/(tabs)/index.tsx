@@ -88,9 +88,13 @@ outputRange:["0%","33.33%","66.66%"]
 
 return(
 
-<SafeAreaView style={styles.container} edges={["top"]}>
+<SafeAreaView style={styles.container}>
 
-<StatusBar style="dark" backgroundColor="#F8F8F6"/>
+<StatusBar
+style="dark"
+backgroundColor="#F8F8F6"
+translucent={false}
+/>
 
 
 
@@ -208,7 +212,7 @@ backgroundColor:"#F8F8F6"
 
 headerContainer:{
 paddingHorizontal:28,
-paddingTop:8,
+paddingTop:16,
 marginBottom:18
 },
 

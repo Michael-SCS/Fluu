@@ -1,167 +1,119 @@
-import { useRef } from "react"
-
-import {
-  Animated,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from "react-native"
-
 import { useTasksStore } from "@/store/tasksStore"
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native"
 
-import { taskCategoryUI } from "@/utils/taskCategoryUI"
+export default function TaskCard({task}:any){
 
+const toggleTask = useTasksStore(s=>s.toggleTask)
+const deleteTask = useTasksStore(s=>s.deleteTask)
+const toggleItem = useTasksStore(s=>s.toggleItem)
 
+if(task.type==="grocery"){
 
-export default function TaskCard({ task }: any){
-
-const toggleTask =
-useTasksStore(state=>state.toggleTask)
-
-const deleteTask =
-useTasksStore(state=>state.deleteTask)
-
-
-
-const scale = useRef(new Animated.Value(1)).current
-
-
-
-function complete(){
-
-Animated.sequence([
-Animated.timing(scale,{
-toValue:0.95,
-duration:120,
-useNativeDriver:true
-}),
-Animated.timing(scale,{
-toValue:1,
-duration:120,
-useNativeDriver:true
-})
-]).start()
-
-toggleTask(task.id)
-
-}
-
-
-
-function removeTask(){
-deleteTask(task.id)
-}
-
-
-
-const categoryUI =
-taskCategoryUI[task.category] ?? {
-icon:"•",
-color:"#999"
-}
-
-
+const total = task.items?.reduce(
+(sum:number,i:any)=>sum+i.quantity*i.price,
+0
+)
 
 return(
 
-<Animated.View
-style={{
-transform:[{scale}]
-}}
->
+<View style={styles.card}>
 
-<View
-style={[
-styles.card,
-task.completed && styles.completed
-]}
->
+<Text style={styles.title}>
+🛒 Grocery List
+</Text>
 
-
-
-{/* CHECKBOX */}
+{task.items?.map((item:any)=>(
 
 <TouchableOpacity
-onPress={complete}
-style={[
+key={item.id}
+style={styles.item}
+onPress={()=>toggleItem(task.id,item.id)}
+>
+
+<View style={[
 styles.checkbox,
-task.completed && styles.checkboxDone
-]}
->
+item.checked && styles.checked
+]}/>
 
-{task.completed && (
-<Text style={styles.check}>✓</Text>
-)}
-
-</TouchableOpacity>
-
-
-
-{/* ICONO CATEGORIA */}
-
-<View
-style={[
-styles.iconContainer,
-{ backgroundColor: categoryUI.color }
-]}
->
-
-<Text style={styles.iconText}>
-{categoryUI.icon}
+<Text style={{flex:1}}>
+{item.name}
 </Text>
 
-</View>
-
-
-
-{/* TEXTO */}
-
-<View style={{flex:1}}>
-
-<Text
-style={[
-styles.title,
-task.completed && styles.titleDone
-]}
->
-{task.title}
+<Text>
+{item.quantity}
 </Text>
 
-
-<Text style={styles.description}>
-{task.description}
-</Text>
-
-
-</View>
-
-
-
-{/* BASURERO */}
-
-<TouchableOpacity
-onPress={removeTask}
-style={styles.delete}
->
-
-<Text style={styles.trash}>
-🗑
+<Text>
+${item.price}
 </Text>
 
 </TouchableOpacity>
 
+))}
 
+<Text style={styles.total}>
+Total: ${total}
+</Text>
 
 </View>
-
-</Animated.View>
 
 )
 
 }
 
+return(
 
+<View style={[
+styles.card,
+task.completed && styles.completedCard
+]}>
+
+<TouchableOpacity
+style={styles.row}
+onPress={()=>toggleTask(task.id)}
+>
+
+<View style={[
+styles.checkbox,
+task.completed && styles.checked
+]}/>
+
+<View style={{flex:1}}>
+
+<Text style={[
+styles.title,
+task.completed && styles.completedText
+]}>
+{task.title}
+</Text>
+
+{!!task.description &&(
+
+<Text style={styles.description}>
+{task.description}
+</Text>
+
+)}
+
+</View>
+
+</TouchableOpacity>
+
+<TouchableOpacity
+onPress={()=>deleteTask(task.id)}
+>
+
+<Text style={styles.delete}>
+🗑
+</Text>
+
+</TouchableOpacity>
+
+</View>
+
+)
+
+}
 
 const styles = StyleSheet.create({
 
@@ -172,46 +124,30 @@ borderRadius:16,
 marginHorizontal:20,
 marginBottom:12,
 flexDirection:"row",
-alignItems:"flex-start"
+alignItems:"center"
 },
 
-completed:{
-backgroundColor:"#E7F8EE"
+completedCard:{
+backgroundColor:"#DCFCE7"
+},
+
+row:{
+flexDirection:"row",
+alignItems:"center",
+flex:1
 },
 
 checkbox:{
 width:22,
 height:22,
-borderRadius:6,
+borderRadius:7,
 borderWidth:2,
-borderColor:"#6366F1",
-marginRight:10,
-alignItems:"center",
-justifyContent:"center"
-},
-
-checkboxDone:{
-backgroundColor:"#6366F1"
-},
-
-check:{
-color:"white",
-fontSize:14,
-fontWeight:"700"
-},
-
-iconContainer:{
-width:28,
-height:28,
-borderRadius:8,
-alignItems:"center",
-justifyContent:"center",
+borderColor:"#22C55E",
 marginRight:10
 },
 
-iconText:{
-color:"white",
-fontSize:14
+checked:{
+backgroundColor:"#22C55E"
 },
 
 title:{
@@ -219,25 +155,29 @@ fontSize:16,
 fontWeight:"600"
 },
 
-titleDone:{
-textDecorationLine:"line-through",
-color:"#777"
+description:{
+fontSize:12,
+color:"#777",
+marginTop:2
 },
 
-description:{
-fontSize:13,
-color:"#666",
-marginTop:4,
-lineHeight:18
+completedText:{
+textDecorationLine:"line-through"
 },
 
 delete:{
-marginLeft:10,
-padding:4
+fontSize:16
 },
 
-trash:{
-fontSize:16
+item:{
+flexDirection:"row",
+alignItems:"center",
+marginTop:6
+},
+
+total:{
+marginTop:10,
+fontWeight:"700"
 }
 
 })
