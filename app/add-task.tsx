@@ -1,4 +1,5 @@
 import { useState } from "react"
+
 import {
   ScrollView,
   StyleSheet,
@@ -27,9 +28,8 @@ const [title,setTitle] = useState("")
 const [description,setDescription] = useState("")
 const [showCustom,setShowCustom] = useState(false)
 
-/* template expand */
-
-const [openTemplate,setOpenTemplate] = useState<string|null>(null)
+const [selectedTemplate,setSelectedTemplate] = useState<any>(null)
+const [openGrocery,setOpenGrocery] = useState(false)
 
 /* repeat */
 
@@ -38,13 +38,11 @@ useState<"none"|"daily"|"weekly">("none")
 
 const [repeatDays,setRepeatDays] = useState<number[]>([])
 
-/* grocery */
+/* =========================
+   GROCERY BUILDER
+========================= */
 
-const [groceryTemplate,setGroceryTemplate] = useState(false)
-
-/* grocery builder */
-
-if(groceryTemplate){
+if(openGrocery){
 
 return(
 
@@ -54,7 +52,6 @@ return(
 onFinish={(items:any)=>{
 
 addGroceryTask(items)
-
 router.back()
 
 }}
@@ -66,37 +63,11 @@ router.back()
 
 }
 
-/* toggle weekly day */
+/* =========================
+   CUSTOM TASK
+========================= */
 
-function toggleDay(day:number){
-
-if(repeatDays.includes(day)){
-setRepeatDays(repeatDays.filter(d=>d!==day))
-}else{
-setRepeatDays([...repeatDays,day])
-}
-
-}
-
-/* create template task */
-
-function createTemplateTask(template:any){
-
-addTask(
-template.title,
-template.description,
-template.category,
-repeatType,
-repeatDays
-)
-
-router.back()
-
-}
-
-/* custom task */
-
-function createCustomTask(){
+function createTask(){
 
 if(!title.trim()) return
 
@@ -112,7 +83,23 @@ router.back()
 
 }
 
-/* templates grouped */
+/* =========================
+   REPEAT DAYS
+========================= */
+
+function toggleDay(day:number){
+
+if(repeatDays.includes(day)){
+setRepeatDays(repeatDays.filter(d=>d!==day))
+}else{
+setRepeatDays([...repeatDays,day])
+}
+
+}
+
+/* =========================
+   GROUP TEMPLATES
+========================= */
 
 const groupedTemplates = taskTemplates.reduce((acc:any,template)=>{
 
@@ -175,6 +162,8 @@ onChangeText={setDescription}
 style={styles.input}
 />
 
+{/* REPEAT */}
+
 <Text style={styles.label}>
 Repeat
 </Text>
@@ -236,7 +225,7 @@ onPress={()=>toggleDay(i)}
 
 <TouchableOpacity
 style={styles.createButton}
-onPress={createCustomTask}
+onPress={createTask}
 >
 
 <Text style={styles.createText}>
@@ -265,26 +254,26 @@ Templates
 
 {templates.map((template:any)=>{
 
-const open = openTemplate===template.id
+const isOpen = selectedTemplate?.id===template.id
+const isGrocery = template.title.includes("Grocery")
 
 return(
 
-<View key={template.id} style={styles.templateCard}>
+<View
+key={template.id}
+style={styles.templateCard}
+>
 
 <TouchableOpacity
 onPress={()=>{
 
-if(template.title.includes("Grocery")){
-setGroceryTemplate(true)
-return
-}
-
-setOpenTemplate(
-open ? null : template.id
-)
-
+if(isOpen){
+setSelectedTemplate(null)
+}else{
+setSelectedTemplate(template)
 setRepeatType("none")
 setRepeatDays([])
+}
 
 }}
 >
@@ -299,9 +288,30 @@ setRepeatDays([])
 
 </TouchableOpacity>
 
-{open &&(
+{/* EXPAND */}
 
-<View style={{marginTop:10}}>
+{isOpen &&(
+
+isGrocery
+
+? (
+
+<TouchableOpacity
+style={styles.personalize}
+onPress={()=>setOpenGrocery(true)}
+>
+
+<Text style={styles.personalizeText}>
+Personalize
+</Text>
+
+</TouchableOpacity>
+
+)
+
+: (
+
+<View>
 
 <Text style={styles.label}>
 Repeat
@@ -364,7 +374,19 @@ onPress={()=>toggleDay(i)}
 
 <TouchableOpacity
 style={styles.createButton}
-onPress={()=>createTemplateTask(template)}
+onPress={()=>{
+
+addTask(
+template.title,
+template.description,
+template.category,
+repeatType,
+repeatDays
+)
+
+router.back()
+
+}}
 >
 
 <Text style={styles.createText}>
@@ -374,6 +396,8 @@ Add Task
 </TouchableOpacity>
 
 </View>
+
+)
 
 )}
 
@@ -397,11 +421,20 @@ Add Task
 
 const styles = StyleSheet.create({
 
-container:{flex:1,backgroundColor:"#FAFAF8"},
+container:{
+flex:1,
+backgroundColor:"#FAFAF8"
+},
 
-body:{padding:24},
+body:{
+padding:24
+},
 
-title:{fontSize:32,fontWeight:"800",marginBottom:20},
+title:{
+fontSize:32,
+fontWeight:"800",
+marginBottom:20
+},
 
 customButton:{
 backgroundColor:"#1C1A17",
@@ -416,7 +449,9 @@ textAlign:"center",
 fontWeight:"700"
 },
 
-form:{marginBottom:20},
+form:{
+marginBottom:20
+},
 
 label:{
 fontWeight:"700",
@@ -501,6 +536,19 @@ templateDesc:{
 fontSize:12,
 color:"#777",
 marginTop:4
+},
+
+personalize:{
+backgroundColor:"#7C3AED",
+padding:14,
+borderRadius:12,
+marginTop:10
+},
+
+personalizeText:{
+color:"#fff",
+textAlign:"center",
+fontWeight:"700"
 }
 
 })

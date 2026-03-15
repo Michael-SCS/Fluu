@@ -7,26 +7,27 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
+  Platform,
+  StatusBar as RNStatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View
 } from "react-native";
 import PagerView from "react-native-pager-view";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const today = new Date();
 
-const dateString = today.toLocaleDateString("en-US", {
-weekday: "long",
-month: "short",
-day: "numeric",
+const dateString = today.toLocaleDateString("en-US",{
+weekday:"long",
+month:"short",
+day:"numeric"
 });
 
-const TAB_ICONS = ["✓", "◎", "⏱"];
-const TAB_LABELS = ["Tasks", "Habits", "Focus"];
+const TAB_ICONS = ["✓","◎","⏱"];
+const TAB_LABELS = ["Tasks","Habits","Focus"];
 
-export default function TodayScreen(){
+export default function Index(){
 
 const pagerRef = useRef<PagerView>(null)
 
@@ -37,13 +38,9 @@ const indicatorAnim = useRef(new Animated.Value(1)).current
 const resetDailyProgress =
 useHabitStore(state=>state.resetDailyProgress)
 
-
-
 useEffect(()=>{
 resetDailyProgress()
 },[])
-
-
 
 function goToPage(index:number){
 
@@ -60,8 +57,6 @@ friction:10
 
 }
 
-
-
 function onPageSelected(e:any){
 
 const pos = e.nativeEvent.position
@@ -77,28 +72,17 @@ friction:10
 
 }
 
-
-
 const indicatorLeft = indicatorAnim.interpolate({
 inputRange:[0,1,2],
 outputRange:["0%","33.33%","66.66%"]
 })
 
-
-
 return(
 
-<SafeAreaView style={styles.container}>
+<View style={styles.container}>
 
-<StatusBar
-style="dark"
-backgroundColor="#F8F8F6"
-translucent={false}
-/>
-
-
-
-{/* HEADER */}
+<View style={styles.statusBar}/>
+<StatusBar style="dark" backgroundColor="#F8F8F6"/>
 
 <View style={styles.headerContainer}>
 
@@ -116,10 +100,6 @@ Today
 
 </View>
 
-
-
-{/* TABS */}
-
 <View style={styles.tabsWrapper}>
 
 <View style={styles.tabsContainer}>
@@ -131,11 +111,9 @@ styles.tabIndicator,
 ]}
 />
 
-
-
 {TAB_LABELS.map((label,index)=>{
 
-const isActive = page === index
+const isActive = page===index
 
 return(
 
@@ -170,10 +148,6 @@ isActive && styles.activeText
 
 </View>
 
-
-
-{/* CONTENT */}
-
 <PagerView
 ref={pagerRef}
 style={styles.pager}
@@ -187,17 +161,13 @@ onPageSelected={onPageSelected}
 
 </PagerView>
 
-
-
 <FloatingAddButton/>
 
-</SafeAreaView>
+</View>
 
 )
 
 }
-
-
 
 const styles = StyleSheet.create({
 
@@ -206,13 +176,13 @@ flex:1,
 backgroundColor:"#F8F8F6"
 },
 
-
-
-/* HEADER */
+statusBar:{
+height:Platform.OS==="android" ? RNStatusBar.currentHeight : 0
+},
 
 headerContainer:{
 paddingHorizontal:28,
-paddingTop:16,
+paddingTop:10,
 marginBottom:18
 },
 
@@ -237,10 +207,6 @@ fontSize:14,
 color:"#8A8A8F",
 fontWeight:"500"
 },
-
-
-
-/* TABS */
 
 tabsWrapper:{
 paddingHorizontal:20,
@@ -294,10 +260,6 @@ color:"#9CA3AF"
 activeText:{
 color:"#0F0F14"
 },
-
-
-
-/* PAGER */
 
 pager:{
 flex:1
